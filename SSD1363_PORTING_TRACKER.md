@@ -8,6 +8,7 @@ Port the SSD1322-oriented library structure into this ESP-IDF PlatformIO project
 - Sources in `src`
 - Current priority on I2C
 - SPI scaffolded now so it can be enabled later without redesigning the codebase
+- Long-term goal is to turn this into a reusable SSD1363 library that is clean enough for other users to adopt, especially because SSD1363 library options appear limited
 
 ## Current Decisions
 
@@ -30,6 +31,7 @@ Port the SSD1322-oriented library structure into this ESP-IDF PlatformIO project
 - Phase 1 is transport and API scaffolding only
 - Full SSD1363 initialization values are not finalized yet
 - Graphics/framebuffer porting is deferred until transport and command paths are validated
+- A later driver phase should expose a more complete SSD1363 command-table-oriented API so the project can use more of the controller's native features, especially grayscale-related controls
 
 ## Progress
 
@@ -45,6 +47,8 @@ Port the SSD1322-oriented library structure into this ESP-IDF PlatformIO project
 | 7. Finalize SSD1363 init sequence | In progress | Full-panel smoke test now works; remaining work is to clean up and validate which init values are strictly required |
 | 8. Bring up display with smoke test | Done | Full display is now responding across the whole panel |
 | 9. Port framebuffer/GFX layer | Pending | After command path is proven |
+| 9a. Expand SSD1363 command coverage | Planned | Add a more professional driver layer covering more of the controller command table, especially grayscale and display-tuning features |
+| 9b. Turn project into reusable library | Planned | Refactor the current bring-up code so it is structured, documented, and useful beyond this single hardware test |
 | 10. Validate future SPI migration path | Pending | Depends on final SPI wiring |
 
 ## Files Added In This Step
@@ -96,6 +100,33 @@ These are placeholders and must be validated against the real hardware:
 - Transport-level init hook
 - Tentative SSD1363 smoke-test initialization sequence
 
+### Future driver goal
+
+- Keep the low-level transport layer minimal
+- Build a fuller SSD1363 driver layer above it around controller commands instead of only smoke-test helpers
+- Organize the future API so command-table features can be exposed cleanly without putting raw command bytes everywhere in application code
+- Include first-class support for grayscale-related controls such as contrast/current/gray table configuration where the hardware supports them
+- Keep the public API understandable enough that other users can pick up the library without reverse-engineering the whole codebase
+
+## Future To-Do List
+
+These items are planned for the future driver/library phase:
+
+1. Freeze the working SSD1363 initialization baseline and document which values are proven on hardware
+2. Replace smoke-test-oriented API naming with stable driver naming
+3. Add named wrappers for more of the SSD1363 command table instead of relying on raw command bytes in higher-level code
+4. Add controller functions for display on/off, remap, start line, display offset, multiplex ratio, contrast, master contrast, phase length, precharge, VCOMH, and related tuning commands
+5. Add grayscale-focused functions, especially default gray table selection and custom gray table support if confirmed on this module
+6. Build a proper 4bpp framebuffer layer for `256x128`
+7. Add basic drawing helpers on top of the framebuffer layer
+8. Refactor `main.c` so it becomes only a demo/example entry point instead of containing bring-up/debug logic
+9. Separate smoke-test code from the reusable driver code
+10. Improve naming, comments, and file organization so the library feels complete and understandable to external users
+11. Add documentation for configuration, wiring, initialization, and usage
+12. Preserve I2C as the working baseline while keeping SPI support ready for later validation
+13. Validate and document which controller features are fully implemented versus intentionally deferred
+14. Prepare the project so it can be published as a useful SSD1363 library rather than only a one-off experiment
+
 ### Smoke test
 
 - I2C bus scan in `main.c`
@@ -127,6 +158,8 @@ These are placeholders and must be validated against the real hardware:
 - Whether the U8g2-like baseline of remap `0x32 0x00`, display offset `0x20`, and column offset `8` maps the panel correctly when the panel is known to be physically `256x128`
 - Whether the combination of U8g2-like init values plus `4-pixel` column address units fully restores full-screen GDDRAM writes
 - Which parts of the current smoke-test init sequence should be preserved as the stable baseline for the real SSD1363 driver layer
+- How to organize the SSD1363 API so more of the command table can be exposed cleanly without turning the application layer into raw register writes
+- What minimum documentation and API cleanup is required before this should be treated as a reusable public library for other SSD1363 users
 
 ## Open Questions
 
@@ -202,4 +235,6 @@ Build a minimal smoke test that:
 - Updated the smoke test to match a known U8g2 SSD1363 `256x128` baseline more closely by setting display offset `0x20`, remap `0x32 0x00`, and column offset `8`
 - Corrected the smoke-test RAM window programming so command `0x15` uses `4-pixel` SSD1363 column units instead of `2-pixel` framebuffer-byte units
 - The user confirmed that, after the column-window fix, the whole display is working
+- Recorded the future goal of making the driver more complete and professional by exposing more of the SSD1363 command table, especially grayscale-related functionality
+- Expanded the tracker with an explicit future to-do list for turning the current bring-up into a reusable SSD1363 library other people could use
 - Established this tracker file as the required running project log

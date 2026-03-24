@@ -32,6 +32,8 @@ Port the SSD1322-oriented library structure into this ESP-IDF PlatformIO project
 - Full SSD1363 initialization values are not finalized yet
 - Graphics/framebuffer porting is deferred until transport and command paths are validated
 - A later driver phase should expose a more complete SSD1363 command-table-oriented API so the project can use more of the controller's native features, especially grayscale-related controls
+- The future reusable-library phase should also include text rendering support with multiple fonts and font sizes
+- Font support should start with a small, clearly licensed, optional font set rather than a large bundled font dump
 
 ## Progress
 
@@ -107,6 +109,12 @@ These are placeholders and must be validated against the real hardware:
 - Organize the future API so command-table features can be exposed cleanly without putting raw command bytes everywhere in application code
 - Include first-class support for grayscale-related controls such as contrast/current/gray table configuration where the hardware supports them
 - Keep the public API understandable enough that other users can pick up the library without reverse-engineering the whole codebase
+- Include a practical text layer with multiple built-in fonts and size options so applications do not need to provide their own text rendering from scratch
+- Keep the first bundled font set compact: only a few practical sizes, not dozens of fonts
+- Prefer clearly licensed fonts for bundled assets, especially public-domain fonts, SIL OFL fonts, and Uwe-created fonts with clear redistribution terms
+- Keep bundled fonts optional so the core driver stays small
+- Document the license for each bundled font in the repository
+- Treat true grayscale or antialiased text as a separate advanced feature that will require a different rendering path or a custom font pipeline
 
 ## Future To-Do List
 
@@ -119,13 +127,21 @@ These items are planned for the future driver/library phase:
 5. Add grayscale-focused functions, especially default gray table selection and custom gray table support if confirmed on this module
 6. Build a proper 4bpp framebuffer layer for `256x128`
 7. Add basic drawing helpers on top of the framebuffer layer
-8. Refactor `main.c` so it becomes only a demo/example entry point instead of containing bring-up/debug logic
-9. Separate smoke-test code from the reusable driver code
-10. Improve naming, comments, and file organization so the library feels complete and understandable to external users
-11. Add documentation for configuration, wiring, initialization, and usage
-12. Preserve I2C as the working baseline while keeping SPI support ready for later validation
-13. Validate and document which controller features are fully implemented versus intentionally deferred
-14. Prepare the project so it can be published as a useful SSD1363 library rather than only a one-off experiment
+8. Add a text-rendering layer with multiple built-in fonts
+9. Include multiple font sizes so the library covers small UI text and larger headings without extra user work
+10. Start with only `3` or `4` bundled font sizes instead of a broad font pack
+11. Curate bundled fonts from clearly licensed sources only
+12. Keep font files optional assets so applications that do not need them are not forced to carry the extra footprint
+13. Document the license and source of each bundled font in the repository
+14. Decide on a clean font format and API so text rendering fits the rest of the library cleanly
+15. Plan a separate future path for true grayscale or antialiased font rendering instead of treating monochrome bitmap fonts as the final solution
+16. Refactor `main.c` so it becomes only a demo/example entry point instead of containing bring-up/debug logic
+17. Separate smoke-test code from the reusable driver code
+18. Improve naming, comments, and file organization so the library feels complete and understandable to external users
+19. Add documentation for configuration, wiring, initialization, usage, and font support
+20. Preserve I2C as the working baseline while keeping SPI support ready for later validation
+21. Validate and document which controller features are fully implemented versus intentionally deferred
+22. Prepare the project so it can be published as a useful SSD1363 library rather than only a one-off experiment
 
 ### Smoke test
 
@@ -160,6 +176,9 @@ These items are planned for the future driver/library phase:
 - Which parts of the current smoke-test init sequence should be preserved as the stable baseline for the real SSD1363 driver layer
 - How to organize the SSD1363 API so more of the command table can be exposed cleanly without turning the application layer into raw register writes
 - What minimum documentation and API cleanup is required before this should be treated as a reusable public library for other SSD1363 users
+- Which font set and font sizes should be included by default so the library is useful without becoming unnecessarily heavy
+- Which clearly licensed fonts should be chosen for the first bundled set
+- What rendering approach should be used later for true grayscale or antialiased fonts on the SSD1363 instead of simple monochrome bitmap text
 
 ## Open Questions
 
@@ -237,4 +256,7 @@ Build a minimal smoke test that:
 - The user confirmed that, after the column-window fix, the whole display is working
 - Recorded the future goal of making the driver more complete and professional by exposing more of the SSD1363 command table, especially grayscale-related functionality
 - Expanded the tracker with an explicit future to-do list for turning the current bring-up into a reusable SSD1363 library other people could use
+- Added future library goals for built-in text rendering with multiple fonts and font sizes
+- Added font-selection constraints: start compact, use clearly licensed fonts, keep fonts optional, and document per-font licensing
+- Added the long-term requirement for true grayscale or antialiased text as a separate future rendering task
 - Established this tracker file as the required running project log

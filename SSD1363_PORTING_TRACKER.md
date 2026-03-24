@@ -46,11 +46,11 @@ Port the SSD1322-oriented library structure into this ESP-IDF PlatformIO project
 | 5. Add SSD1363 API scaffold | Done | Basic command/data/window/buffer functions added |
 | 5a. Validate scaffold build | Done | PlatformIO build reached configuration and workspace diagnostics report no errors |
 | 6. Confirm panel wiring and parameters | In progress | I2C pins accepted, no reset pin confirmed, I2C address now confirmed as `0x3C` |
-| 7. Finalize SSD1363 init sequence | In progress | Full-panel smoke test now works; remaining work is to clean up and validate which init values are strictly required |
+| 7. Finalize SSD1363 init sequence | In progress | Working baseline is now being frozen into the core driver API; remaining work is to validate which analog/power values are strictly required |
 | 8. Bring up display with smoke test | Done | Full display is now responding across the whole panel |
 | 9. Port framebuffer/GFX layer | Pending | After command path is proven |
 | 9a. Expand SSD1363 command coverage | Planned | Add a more professional driver layer covering more of the controller command table, especially grayscale and display-tuning features |
-| 9b. Turn project into reusable library | Planned | Refactor the current bring-up code so it is structured, documented, and useful beyond this single hardware test |
+| 9b. Turn project into reusable library | In progress | Main entry is being reduced toward user code only, with demo and driver logic moved into dedicated files |
 | 10. Validate future SPI migration path | Pending | Depends on final SPI wiring |
 
 ## Files Added In This Step
@@ -100,7 +100,8 @@ These are placeholders and must be validated against the real hardware:
 - Set column/row window
 - Send raw display buffer to GDDRAM with I2C chunking
 - Transport-level init hook
-- Tentative SSD1363 smoke-test initialization sequence
+- Baseline SSD1363 panel initialization sequence frozen from the currently working smoke-test result
+- First named command wrappers for display control and panel mapping
 
 ### Future driver goal
 
@@ -258,5 +259,13 @@ Build a minimal smoke test that:
 - Expanded the tracker with an explicit future to-do list for turning the current bring-up into a reusable SSD1363 library other people could use
 - Added future library goals for built-in text rendering with multiple fonts and font sizes
 - Added font-selection constraints: start compact, use clearly licensed fonts, keep fonts optional, and document per-font licensing
+
+### 2026-03-24
+
+- Renamed the temporary smoke-test-style panel init path toward a stable driver-facing baseline initialization entry point
+- Started freezing the currently working hardware configuration into reusable API calls instead of keeping it only as ad hoc setup code
+- Added named driver wrappers for several panel-control commands already used by the working initialization sequence
+- Moved the I2C smoke-test and pattern-loop logic out of `main.c` into a dedicated demo module
+- Reduced `main.c` to a thin application entry point so the project can move toward user-code-only main logic later
 - Added the long-term requirement for true grayscale or antialiased text as a separate future rendering task
 - Established this tracker file as the required running project log

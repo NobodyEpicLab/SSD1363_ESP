@@ -9,12 +9,14 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "ssd1363_api.h"
+#include "ssd1363_basic.h"
 #include "ssd1363_config.h"
+#include "ssd1363_framebuffer.h"
 
 #define SSD1363_FRAMEBUFFER_SIZE ((SSD1363_ACTIVE_WIDTH * SSD1363_ACTIVE_HEIGHT) / 2)
 
 static uint8_t g_framebuffer[SSD1363_FRAMEBUFFER_SIZE];
+static ssd1363_framebuffer_t g_gfx_framebuffer;
 
 static void build_vertical_stripe_pattern(uint8_t on_nibble, uint8_t off_nibble)
 {
@@ -69,12 +71,64 @@ static esp_err_t write_fullscreen_pattern(uint8_t pattern)
 {
 	memset(g_framebuffer, pattern, sizeof(g_framebuffer));
 
-	return ssd1363_api_send_buffer(g_framebuffer, sizeof(g_framebuffer));
+	return ssd1363_basic_write_buffer(g_framebuffer, sizeof(g_framebuffer));
 }
 
 static esp_err_t write_framebuffer(void)
 {
-	return ssd1363_api_send_buffer(g_framebuffer, sizeof(g_framebuffer));
+	return ssd1363_basic_write_buffer(g_framebuffer, sizeof(g_framebuffer));
+}
+
+static esp_err_t show_framebuffer_primitives(void)
+{
+	esp_err_t err;
+	uint8_t sample_pixel = 0;
+
+	ssd1363_framebuffer_init(&g_gfx_framebuffer);
+	ssd1363_framebuffer_fill(&g_gfx_framebuffer, 0x0);
+
+	err = ssd1363_framebuffer_draw_rect(&g_gfx_framebuffer, 0, 0, SSD1363_FRAMEBUFFER_WIDTH, SSD1363_FRAMEBUFFER_HEIGHT, 0xF);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_framebuffer_draw_rect(&g_gfx_framebuffer, 8, 8, SSD1363_FRAMEBUFFER_WIDTH - 16, SSD1363_FRAMEBUFFER_HEIGHT - 16, 0xA);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_framebuffer_fill_rect(&g_gfx_framebuffer, 20, 20, 48, 32, 0x4);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_framebuffer_fill_rect(&g_gfx_framebuffer, 94, 36, 68, 56, 0x8);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_framebuffer_fill_rect(&g_gfx_framebuffer, 188, 20, 48, 32, 0xC);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_framebuffer_set_pixel(&g_gfx_framebuffer, 0, 0, 0xF);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_framebuffer_set_pixel(&g_gfx_framebuffer, SSD1363_FRAMEBUFFER_WIDTH - 1U, SSD1363_FRAMEBUFFER_HEIGHT - 1U, 0xF);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_framebuffer_get_pixel(&g_gfx_framebuffer, 20, 20, &sample_pixel);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	printf("Framebuffer sample pixel at (20,20) = 0x%X\n", sample_pixel);
+	return ssd1363_framebuffer_flush(&g_gfx_framebuffer);
 }
 
 void ssd1363_demo_run_i2c_smoke_test(void)
@@ -94,9 +148,9 @@ void ssd1363_demo_run_i2c_smoke_test(void)
 		SSD1363_REMAP_BYTE0,
 		SSD1363_REMAP_BYTE1);
 
-	esp_err_t err = ssd1363_api_init(SSD1363_BUS_I2C);
+	esp_err_t err = ssd1363_basic_init(SSD1363_BUS_I2C);
 	if (err != ESP_OK) {
-		printf("ssd1363_api_init failed: %s\n", esp_err_to_name(err));
+		printf("ssd1363_basic_init failed: %s\n", esp_err_to_name(err));
 		return;
 	}
 
@@ -108,29 +162,11 @@ void ssd1363_demo_run_i2c_smoke_test(void)
 		return;
 	}
 
-	printf("Address 0x%02X acknowledged, sending baseline panel init\n", SSD1363_I2C_ADDRESS);
-
-	err = ssd1363_api_panel_init();
-	if (err != ESP_OK) {
-		printf("Panel init failed: %s\n", esp_err_to_name(err));
-		return;
-	}
-
-	err = ssd1363_api_set_window(
-		0,
-		(SSD1363_ACTIVE_WIDTH / 4) - 1,
-		0,
-		SSD1363_ACTIVE_HEIGHT - 1
-	);
-	if (err != ESP_OK) {
-		printf("Initial window setup failed: %s\n", esp_err_to_name(err));
-		return;
-	}
-
-	printf("Panel init complete, cycling fill and stripe patterns\n");
+	printf("Address 0x%02X acknowledged, basic example initialized\n", SSD1363_I2C_ADDRESS);
+	printf("Cycling fill and stripe patterns\n");
 
 	while (true) {
-		err = ssd1363_api_fill_active_area(0x00, SSD1363_ACTIVE_WIDTH, SSD1363_ACTIVE_HEIGHT);
+		err = ssd1363_basic_clear();
 		if (err != ESP_OK) {
 			printf("Full black fill failed: %s\n", esp_err_to_name(err));
 			return;
@@ -138,7 +174,7 @@ void ssd1363_demo_run_i2c_smoke_test(void)
 		printf("Displayed direct fill 0x00\n");
 		vTaskDelay(pdMS_TO_TICKS(1000));
 
-		err = ssd1363_api_fill_active_area(0xFF, SSD1363_ACTIVE_WIDTH, SSD1363_ACTIVE_HEIGHT);
+		err = ssd1363_basic_fill(0xFF);
 		if (err != ESP_OK) {
 			printf("Full white fill failed: %s\n", esp_err_to_name(err));
 			return;
@@ -162,6 +198,14 @@ void ssd1363_demo_run_i2c_smoke_test(void)
 			return;
 		}
 		printf("Displayed vertical stripe pattern\n");
+		vTaskDelay(pdMS_TO_TICKS(1000));
+
+		err = show_framebuffer_primitives();
+		if (err != ESP_OK) {
+			printf("Framebuffer primitive scene failed: %s\n", esp_err_to_name(err));
+			return;
+		}
+		printf("Displayed framebuffer primitive scene\n");
 		vTaskDelay(pdMS_TO_TICKS(1000));
 
 		for (size_t index = 0; index < (sizeof(patterns) / sizeof(patterns[0])); ++index) {

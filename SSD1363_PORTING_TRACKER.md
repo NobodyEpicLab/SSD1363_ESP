@@ -48,9 +48,10 @@ Port the SSD1322-oriented library structure into this ESP-IDF PlatformIO project
 | 6. Confirm panel wiring and parameters | In progress | I2C pins accepted, no reset pin confirmed, I2C address now confirmed as `0x3C` |
 | 7. Finalize SSD1363 init sequence | In progress | Working baseline is now being frozen into the core driver API; remaining work is to validate which analog/power values are strictly required |
 | 8. Bring up display with smoke test | Done | Full display is now responding across the whole panel |
-| 9. Port framebuffer/GFX layer | Pending | After command path is proven |
-| 9a. Expand SSD1363 command coverage | Planned | Add a more professional driver layer covering more of the controller command table, especially grayscale and display-tuning features |
+| 9. Port framebuffer/GFX layer | In progress | A fixed-size `256x128` 4bpp framebuffer module is being added with flush, pixel access, and rectangle primitives |
+| 9a. Expand SSD1363 command coverage | In progress | The baseline init path is being converted from raw writes into named command wrappers, starting with display, timing, and analog-tuning commands |
 | 9b. Turn project into reusable library | In progress | Main entry is being reduced toward user code only, with demo and driver logic moved into dedicated files |
+| 9c. Add example-layer API | In progress | A thin `basic` layer is being introduced above the core driver so user code and demos do not need to talk directly to low-level controller functions |
 | 10. Validate future SPI migration path | Pending | Depends on final SPI wiring |
 
 ## Files Added In This Step
@@ -58,8 +59,12 @@ Port the SSD1322-oriented library structure into this ESP-IDF PlatformIO project
 - `include/ssd1363_config.h`
 - `include/ssd1363_interface.h`
 - `include/ssd1363_api.h`
+- `include/ssd1363_basic.h`
+- `include/ssd1363_framebuffer.h`
 - `src/ssd1363_interface.c`
 - `src/ssd1363_api.c`
+- `src/ssd1363_basic.c`
+- `src/ssd1363_framebuffer.c`
 - `src/main.c`
 
 ## Assumptions In The Current Scaffold
@@ -101,7 +106,19 @@ These are placeholders and must be validated against the real hardware:
 - Send raw display buffer to GDDRAM with I2C chunking
 - Transport-level init hook
 - Baseline SSD1363 panel initialization sequence frozen from the currently working smoke-test result
-- First named command wrappers for display control and panel mapping
+- Named command wrappers for display control, panel mapping, timing, and analog-tuning commands already used by the working baseline init
+
+### Basic example layer
+
+- A thin `ssd1363_basic` layer now sits above the low-level API
+- This layer is intended to give demos and future user code a stable starting point without exposing raw controller details too early
+- The current `basic` layer handles init, display on/off, clear, full-screen fill, and full-buffer write
+
+### Framebuffer layer
+
+- A dedicated fixed-size `256x128` `4bpp` framebuffer module now sits above the basic display layer
+- This module provides buffer ownership, full-buffer clear/fill, single-pixel read/write, rectangle outline/fill primitives, and a full-frame flush path
+- Pixel packing follows the active display write format already used by the project: even `x` pixel in the high nibble, odd `x` pixel in the low nibble
 
 ### Future driver goal
 
@@ -267,5 +284,8 @@ Build a minimal smoke test that:
 - Added named driver wrappers for several panel-control commands already used by the working initialization sequence
 - Moved the I2C smoke-test and pattern-loop logic out of `main.c` into a dedicated demo module
 - Reduced `main.c` to a thin application entry point so the project can move toward user-code-only main logic later
+- Added a first `basic` example layer inspired by the structure of external display libraries, but kept all SSD1363 controller behavior local to this project
+- Continued converting the working SSD1363 init sequence from raw command writes into named API wrappers so the public driver header better matches a command-table-oriented library
+- Added the first framebuffer/GFX building block with a dedicated `4bpp` framebuffer module, pixel helpers, rectangle primitives, and flush-through-basic-display support
 - Added the long-term requirement for true grayscale or antialiased text as a separate future rendering task
 - Established this tracker file as the required running project log

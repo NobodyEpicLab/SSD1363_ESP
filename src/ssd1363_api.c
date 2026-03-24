@@ -62,6 +62,31 @@ esp_err_t ssd1363_api_display_on(void)
     return ssd1363_api_command(SSD1363_CMD_DISPLAY_ON);
 }
 
+esp_err_t ssd1363_api_exit_partial_display(void)
+{
+    return ssd1363_api_command(SSD1363_CMD_EXIT_PARTIAL_DISPLAY);
+}
+
+esp_err_t ssd1363_api_set_display_mode_normal(void)
+{
+    return ssd1363_api_command(SSD1363_CMD_SET_DISPLAY_MODE_NORMAL);
+}
+
+esp_err_t ssd1363_api_set_display_clock(uint8_t clock_setting)
+{
+    return ssd1363_api_write_command_with_data(SSD1363_CMD_SET_CLOCK_DIVIDER, &clock_setting, 1);
+}
+
+esp_err_t ssd1363_api_set_function_selection(uint8_t function_selection)
+{
+    return ssd1363_api_write_command_with_data(SSD1363_CMD_FUNCTION_SELECTION, &function_selection, 1);
+}
+
+esp_err_t ssd1363_api_set_gpio(uint8_t gpio_config)
+{
+    return ssd1363_api_write_command_with_data(SSD1363_CMD_SET_GPIO, &gpio_config, 1);
+}
+
 esp_err_t ssd1363_api_set_multiplex_ratio(uint8_t ratio)
 {
     return ssd1363_api_write_command_with_data(SSD1363_CMD_SET_MULTIPLEX_RATIO, &ratio, 1);
@@ -82,6 +107,11 @@ esp_err_t ssd1363_api_set_remap(uint8_t remap_byte0, uint8_t remap_byte1)
     return ssd1363_api_write_pair(SSD1363_CMD_SET_REMAP, remap_byte0, remap_byte1);
 }
 
+esp_err_t ssd1363_api_set_segment_low_voltage(uint8_t level0, uint8_t level1)
+{
+    return ssd1363_api_write_pair(SSD1363_CMD_SET_SEGMENT_LOW_VOLTAGE, level0, level1);
+}
+
 esp_err_t ssd1363_api_set_contrast(uint8_t contrast)
 {
     return ssd1363_api_write_command_with_data(SSD1363_CMD_SET_CONTRAST, &contrast, 1);
@@ -92,83 +122,111 @@ esp_err_t ssd1363_api_set_master_contrast(uint8_t contrast)
     return ssd1363_api_write_command_with_data(SSD1363_CMD_SET_MASTER_CONTRAST, &contrast, 1);
 }
 
+esp_err_t ssd1363_api_use_default_gray_table(void)
+{
+    return ssd1363_api_command(SSD1363_CMD_USE_DEFAULT_GRAY_TABLE);
+}
+
+esp_err_t ssd1363_api_set_phase_length(uint8_t phase_length)
+{
+    return ssd1363_api_write_command_with_data(SSD1363_CMD_SET_PHASE_LENGTH, &phase_length, 1);
+}
+
+esp_err_t ssd1363_api_set_display_enhancement(uint8_t value0, uint8_t value1)
+{
+    return ssd1363_api_write_pair(SSD1363_CMD_SET_DISPLAY_ENHANCEMENT, value0, value1);
+}
+
+esp_err_t ssd1363_api_set_precharge_voltage(uint8_t voltage)
+{
+    return ssd1363_api_write_command_with_data(SSD1363_CMD_SET_PRECHARGE_VOLTAGE, &voltage, 1);
+}
+
+esp_err_t ssd1363_api_set_second_precharge(uint8_t period)
+{
+    return ssd1363_api_write_command_with_data(SSD1363_CMD_SET_SECOND_PRECHARGE, &period, 1);
+}
+
+esp_err_t ssd1363_api_set_vcomh(uint8_t level)
+{
+    return ssd1363_api_write_command_with_data(SSD1363_CMD_SET_VCOMH, &level, 1);
+}
+
 esp_err_t ssd1363_api_panel_init(void)
 {
-    static const uint8_t unlock[] = {0x12};
-    static const uint8_t clock_divider[] = {0x30};
-    static const uint8_t multiplex_ratio[] = {SSD1363_MULTIPLEX_RATIO};
-    static const uint8_t display_offset[] = {SSD1363_DISPLAY_OFFSET};
-    static const uint8_t start_line[] = {SSD1363_DISPLAY_START_LINE};
-    static const uint8_t remap[] = {SSD1363_REMAP_BYTE0, SSD1363_REMAP_BYTE1};
-    static const uint8_t io_input[] = {0x00};
-    static const uint8_t function_select[] = {0x01};
-    static const uint8_t vsl[] = {0xA0, 0xFD};
-    static const uint8_t contrast[] = {0x7F};
-    static const uint8_t master_contrast[] = {0x0F};
-    static const uint8_t phase_length[] = {0x74};
-    static const uint8_t enhancement[] = {0x82, 0x20};
-    static const uint8_t precharge_voltage[] = {0x1F};
-    static const uint8_t second_precharge[] = {0x08};
-    static const uint8_t vcomh[] = {0x07};
+    const uint8_t unlock_code = 0x12;
+    const uint8_t display_clock = 0x30;
+    const uint8_t gpio_config = 0x00;
+    const uint8_t function_selection = 0x01;
+    const uint8_t vsl0 = 0xA0;
+    const uint8_t vsl1 = 0xFD;
+    const uint8_t contrast = 0x7F;
+    const uint8_t master_contrast = 0x0F;
+    const uint8_t phase_length = 0x74;
+    const uint8_t enhancement0 = 0x82;
+    const uint8_t enhancement1 = 0x20;
+    const uint8_t precharge_voltage = 0x1F;
+    const uint8_t second_precharge = 0x08;
+    const uint8_t vcomh = 0x07;
 
-    esp_err_t err = ssd1363_api_write_command_with_data(SSD1363_CMD_COMMAND_LOCK, unlock, sizeof(unlock));
+    esp_err_t err = ssd1363_api_unlock_command_interface(unlock_code);
     if (err != ESP_OK) return err;
 
     err = ssd1363_api_display_off();
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_write_command_with_data(SSD1363_CMD_SET_CLOCK_DIVIDER, clock_divider, sizeof(clock_divider));
+    err = ssd1363_api_set_display_clock(display_clock);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_multiplex_ratio(multiplex_ratio[0]);
+    err = ssd1363_api_set_multiplex_ratio(SSD1363_MULTIPLEX_RATIO);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_display_offset(display_offset[0]);
+    err = ssd1363_api_set_display_offset(SSD1363_DISPLAY_OFFSET);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_start_line(start_line[0]);
+    err = ssd1363_api_set_start_line(SSD1363_DISPLAY_START_LINE);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_remap(remap[0], remap[1]);
+    err = ssd1363_api_set_remap(SSD1363_REMAP_BYTE0, SSD1363_REMAP_BYTE1);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_write_command_with_data(SSD1363_CMD_SET_GPIO, io_input, sizeof(io_input));
+    err = ssd1363_api_set_gpio(gpio_config);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_write_command_with_data(SSD1363_CMD_FUNCTION_SELECTION, function_select, sizeof(function_select));
+    err = ssd1363_api_set_function_selection(function_selection);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_write_command_with_data(0xB4, vsl, sizeof(vsl));
+    err = ssd1363_api_set_segment_low_voltage(vsl0, vsl1);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_contrast(contrast[0]);
+    err = ssd1363_api_set_contrast(contrast);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_master_contrast(master_contrast[0]);
+    err = ssd1363_api_set_master_contrast(master_contrast);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_command(SSD1363_CMD_USE_DEFAULT_GRAY_TABLE);
+    err = ssd1363_api_use_default_gray_table();
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_write_command_with_data(SSD1363_CMD_SET_PHASE_LENGTH, phase_length, sizeof(phase_length));
+    err = ssd1363_api_set_phase_length(phase_length);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_write_command_with_data(SSD1363_CMD_SET_DISPLAY_ENHANCEMENT, enhancement, sizeof(enhancement));
+    err = ssd1363_api_set_display_enhancement(enhancement0, enhancement1);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_write_command_with_data(SSD1363_CMD_SET_PRECHARGE_VOLTAGE, precharge_voltage, sizeof(precharge_voltage));
+    err = ssd1363_api_set_precharge_voltage(precharge_voltage);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_write_command_with_data(SSD1363_CMD_SET_SECOND_PRECHARGE, second_precharge, sizeof(second_precharge));
+    err = ssd1363_api_set_second_precharge(second_precharge);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_write_command_with_data(SSD1363_CMD_SET_VCOMH, vcomh, sizeof(vcomh));
+    err = ssd1363_api_set_vcomh(vcomh);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_command(SSD1363_CMD_SET_DISPLAY_MODE_NORMAL);
+    err = ssd1363_api_set_display_mode_normal();
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_command(0xA9);
+    err = ssd1363_api_exit_partial_display();
     if (err != ESP_OK) return err;
 
     ssd1363_interface_delay_ms(10);

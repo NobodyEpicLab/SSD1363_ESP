@@ -18,11 +18,13 @@ extern "C" {
 #define SSD1363_CMD_SET_START_LINE            0xA1
 #define SSD1363_CMD_SET_DISPLAY_OFFSET        0xA2
 #define SSD1363_CMD_SET_DISPLAY_MODE_NORMAL   0xA6
+#define SSD1363_CMD_EXIT_PARTIAL_DISPLAY      0xA9
 #define SSD1363_CMD_DISPLAY_OFF               0xAE
 #define SSD1363_CMD_DISPLAY_ON                0xAF
 #define SSD1363_CMD_FUNCTION_SELECTION        0xAB
 #define SSD1363_CMD_SET_PHASE_LENGTH          0xB1
 #define SSD1363_CMD_SET_CLOCK_DIVIDER         0xB3
+#define SSD1363_CMD_SET_SEGMENT_LOW_VOLTAGE   0xB4
 #define SSD1363_CMD_SET_DISPLAY_ENHANCEMENT   0xD1
 #define SSD1363_CMD_SET_GPIO                  0xB5
 #define SSD1363_CMD_SET_SECOND_PRECHARGE      0xB6
@@ -39,12 +41,24 @@ esp_err_t ssd1363_api_panel_init(void);
 esp_err_t ssd1363_api_unlock_command_interface(uint8_t unlock_code);
 esp_err_t ssd1363_api_display_off(void);
 esp_err_t ssd1363_api_display_on(void);
+esp_err_t ssd1363_api_exit_partial_display(void);
+esp_err_t ssd1363_api_set_display_mode_normal(void);
+esp_err_t ssd1363_api_set_display_clock(uint8_t clock_setting);
+esp_err_t ssd1363_api_set_function_selection(uint8_t function_selection);
+esp_err_t ssd1363_api_set_gpio(uint8_t gpio_config);
 esp_err_t ssd1363_api_set_multiplex_ratio(uint8_t ratio);
 esp_err_t ssd1363_api_set_display_offset(uint8_t offset);
 esp_err_t ssd1363_api_set_start_line(uint8_t line);
 esp_err_t ssd1363_api_set_remap(uint8_t remap_byte0, uint8_t remap_byte1);
+esp_err_t ssd1363_api_set_segment_low_voltage(uint8_t level0, uint8_t level1);
 esp_err_t ssd1363_api_set_contrast(uint8_t contrast);
 esp_err_t ssd1363_api_set_master_contrast(uint8_t contrast);
+esp_err_t ssd1363_api_use_default_gray_table(void);
+esp_err_t ssd1363_api_set_phase_length(uint8_t phase_length);
+esp_err_t ssd1363_api_set_display_enhancement(uint8_t value0, uint8_t value1);
+esp_err_t ssd1363_api_set_precharge_voltage(uint8_t voltage);
+esp_err_t ssd1363_api_set_second_precharge(uint8_t period);
+esp_err_t ssd1363_api_set_vcomh(uint8_t level);
 esp_err_t ssd1363_api_command(uint8_t command);
 esp_err_t ssd1363_api_data(uint8_t data);
 esp_err_t ssd1363_api_data_buffer(const uint8_t *data, size_t len);

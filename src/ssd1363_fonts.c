@@ -1,8 +1,40 @@
 #include "ssd1363_fonts.h"
 
-#include "FreeMono12pt7b.h"
+#include "font_assets/CascadiaCode15px.h"
+#include "font_assets/CascadiaCode29px.h"
+#include "font_assets/CascadiaCode43px.h"
+#include "font_assets/FreeMono12pt7b.h"
+#include "font_assets/IBMPlexMonoLight17px.h"
+#include "font_assets/IBMPlexMonoLight32px.h"
+#include "font_assets/IBMPlexMonoLight47px.h"
+#include "font_assets/JetBrainsMonoLight17px.h"
+#include "font_assets/JetBrainsMonoLight33px.h"
+#include "font_assets/JetBrainsMonoLight48px.h"
+#include "font_assets/Michroma18px.h"
+#include "font_assets/Michroma35px.h"
+#include "font_assets/Michroma52px.h"
+#include "font_assets/Orbitron16px.h"
+#include "font_assets/Orbitron31px.h"
+#include "font_assets/Orbitron46px.h"
+#include "font_assets/ShareTechMono14px.h"
+#include "font_assets/ShareTechMono28px.h"
+#include "font_assets/ShareTechMono41px.h"
 
 #define SSD1363_GLYPH(code, bitmap_name) {code, 5U, bitmap_name}
+#define SSD1363_DEFINE_GFX_FONT(symbol, gfx_name, ascent_macro, y_advance_macro, scale_x_value, scale_y_value, line_spacing_value) \
+	const ssd1363_font_t symbol = { \
+		.backend = SSD1363_FONT_BACKEND_GFX, \
+		.glyphs = NULL, \
+		.glyph_count = 0U, \
+		.gfx_font = &gfx_name, \
+		.glyph_height = y_advance_macro, \
+		.baseline = ascent_macro, \
+		.scale_x = scale_x_value, \
+		.scale_y = scale_y_value, \
+		.letter_spacing = 0U, \
+		.line_spacing = line_spacing_value, \
+		.fallback_char = '?', \
+	};
 
 static const uint8_t glyph_space[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 static const uint8_t glyph_dash[] = {0x00, 0x00, 0x00, 0x70, 0x00, 0x00, 0x00};
@@ -132,44 +164,58 @@ const ssd1363_font_t ssd1363_font_builtin_15x21 = {
 	.fallback_char = ' ',
 };
 
-const ssd1363_font_t ssd1363_font_freemono12pt7b = {
-	.backend = SSD1363_FONT_BACKEND_GFX,
-	.glyphs = NULL,
-	.glyph_count = 0U,
-	.gfx_font = &FreeMono12pt7b,
-	.glyph_height = 24U,
-	.baseline = 15U,
-	.scale_x = 1U,
-	.scale_y = 1U,
-	.letter_spacing = 0U,
-	.line_spacing = 0U,
-	.fallback_char = '?',
-};
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_freemono_24px, FreeMono12pt7b, 15U, 24U, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_freemono_48px, FreeMono12pt7b, 15U, 24U, 2U, 2U, 2U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_freemono_72px, FreeMono12pt7b, 15U, 24U, 3U, 3U, 4U)
 
-const ssd1363_font_t ssd1363_font_freemono12pt7b_x2 = {
-	.backend = SSD1363_FONT_BACKEND_GFX,
-	.glyphs = NULL,
-	.glyph_count = 0U,
-	.gfx_font = &FreeMono12pt7b,
-	.glyph_height = 24U,
-	.baseline = 15U,
-	.scale_x = 2U,
-	.scale_y = 2U,
-	.letter_spacing = 0U,
-	.line_spacing = 2U,
-	.fallback_char = '?',
-};
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_freemono12pt7b, FreeMono12pt7b, 15U, 24U, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_freemono12pt7b_x2, FreeMono12pt7b, 15U, 24U, 2U, 2U, 2U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_freemono12pt7b_x3, FreeMono12pt7b, 15U, 24U, 3U, 3U, 4U)
 
-const ssd1363_font_t ssd1363_font_freemono12pt7b_x3 = {
-	.backend = SSD1363_FONT_BACKEND_GFX,
-	.glyphs = NULL,
-	.glyph_count = 0U,
-	.gfx_font = &FreeMono12pt7b,
-	.glyph_height = 24U,
-	.baseline = 15U,
-	.scale_x = 3U,
-	.scale_y = 3U,
-	.letter_spacing = 0U,
-	.line_spacing = 4U,
-	.fallback_char = '?',
-};
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_cascadiacode_15px, CascadiaCode15px, CascadiaCode15px_ASCENT, CascadiaCode15px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_cascadiacode_29px, CascadiaCode29px, CascadiaCode29px_ASCENT, CascadiaCode29px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_cascadiacode_43px, CascadiaCode43px, CascadiaCode43px_ASCENT, CascadiaCode43px_Y_ADVANCE, 1U, 1U, 0U)
+
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_jetbrainsmonolight_17px, JetBrainsMonoLight17px, JetBrainsMonoLight17px_ASCENT, JetBrainsMonoLight17px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_jetbrainsmonolight_33px, JetBrainsMonoLight33px, JetBrainsMonoLight33px_ASCENT, JetBrainsMonoLight33px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_jetbrainsmonolight_48px, JetBrainsMonoLight48px, JetBrainsMonoLight48px_ASCENT, JetBrainsMonoLight48px_Y_ADVANCE, 1U, 1U, 0U)
+
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_ibmplexmonolight_17px, IBMPlexMonoLight17px, IBMPlexMonoLight17px_ASCENT, IBMPlexMonoLight17px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_ibmplexmonolight_32px, IBMPlexMonoLight32px, IBMPlexMonoLight32px_ASCENT, IBMPlexMonoLight32px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_ibmplexmonolight_47px, IBMPlexMonoLight47px, IBMPlexMonoLight47px_ASCENT, IBMPlexMonoLight47px_Y_ADVANCE, 1U, 1U, 0U)
+
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_michroma_18px, Michroma18px, Michroma18px_ASCENT, Michroma18px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_michroma_35px, Michroma35px, Michroma35px_ASCENT, Michroma35px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_michroma_52px, Michroma52px, Michroma52px_ASCENT, Michroma52px_Y_ADVANCE, 1U, 1U, 0U)
+
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_orbitron_16px, Orbitron16px, Orbitron16px_ASCENT, Orbitron16px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_orbitron_31px, Orbitron31px, Orbitron31px_ASCENT, Orbitron31px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_orbitron_46px, Orbitron46px, Orbitron46px_ASCENT, Orbitron46px_Y_ADVANCE, 1U, 1U, 0U)
+
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_sharetechmono_14px, ShareTechMono14px, ShareTechMono14px_ASCENT, ShareTechMono14px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_sharetechmono_28px, ShareTechMono28px, ShareTechMono28px_ASCENT, ShareTechMono28px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_sharetechmono_41px, ShareTechMono41px, ShareTechMono41px_ASCENT, ShareTechMono41px_Y_ADVANCE, 1U, 1U, 0U)
+
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_cascadiacode12pt, CascadiaCode15px, CascadiaCode15px_ASCENT, CascadiaCode15px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_cascadiacode12pt_x2, CascadiaCode29px, CascadiaCode29px_ASCENT, CascadiaCode29px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_cascadiacode12pt_x3, CascadiaCode43px, CascadiaCode43px_ASCENT, CascadiaCode43px_Y_ADVANCE, 1U, 1U, 0U)
+
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_jetbrainsmonolight12pt, JetBrainsMonoLight17px, JetBrainsMonoLight17px_ASCENT, JetBrainsMonoLight17px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_jetbrainsmonolight12pt_x2, JetBrainsMonoLight33px, JetBrainsMonoLight33px_ASCENT, JetBrainsMonoLight33px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_jetbrainsmonolight12pt_x3, JetBrainsMonoLight48px, JetBrainsMonoLight48px_ASCENT, JetBrainsMonoLight48px_Y_ADVANCE, 1U, 1U, 0U)
+
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_ibmplexmonolight12pt, IBMPlexMonoLight17px, IBMPlexMonoLight17px_ASCENT, IBMPlexMonoLight17px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_ibmplexmonolight12pt_x2, IBMPlexMonoLight32px, IBMPlexMonoLight32px_ASCENT, IBMPlexMonoLight32px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_ibmplexmonolight12pt_x3, IBMPlexMonoLight47px, IBMPlexMonoLight47px_ASCENT, IBMPlexMonoLight47px_Y_ADVANCE, 1U, 1U, 0U)
+
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_michroma12pt, Michroma18px, Michroma18px_ASCENT, Michroma18px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_michroma12pt_x2, Michroma35px, Michroma35px_ASCENT, Michroma35px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_michroma12pt_x3, Michroma52px, Michroma52px_ASCENT, Michroma52px_Y_ADVANCE, 1U, 1U, 0U)
+
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_orbitron12pt, Orbitron16px, Orbitron16px_ASCENT, Orbitron16px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_orbitron12pt_x2, Orbitron31px, Orbitron31px_ASCENT, Orbitron31px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_orbitron12pt_x3, Orbitron46px, Orbitron46px_ASCENT, Orbitron46px_Y_ADVANCE, 1U, 1U, 0U)
+
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_sharetechmono12pt, ShareTechMono14px, ShareTechMono14px_ASCENT, ShareTechMono14px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_sharetechmono12pt_x2, ShareTechMono28px, ShareTechMono28px_ASCENT, ShareTechMono28px_Y_ADVANCE, 1U, 1U, 0U)
+SSD1363_DEFINE_GFX_FONT(ssd1363_font_sharetechmono12pt_x3, ShareTechMono41px, ShareTechMono41px_ASCENT, ShareTechMono41px_Y_ADVANCE, 1U, 1U, 0U)

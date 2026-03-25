@@ -15,7 +15,8 @@
  */
 static void ssd1363_basic_encode_row_for_gddram(uint8_t *dest, const uint8_t *src, size_t row_len)
 {
-#if SSD1363_GDDRAM_SWAP_4PX_GROUP_BYTES
+
+#if SSD1363_PANEL_SWAP_4PX_GROUP_BYTES
 	for (size_t offset = 0; offset < row_len; offset += 2U) {
 		dest[offset] = src[offset + 1U];
 		dest[offset + 1U] = src[offset];
@@ -39,7 +40,8 @@ static bool ssd1363_basic_area_is_valid(uint16_t x, uint16_t y, uint16_t width, 
 		return false;
 	}
 
-	if ((x % 4U) != 0U || (width % 4U) != 0U) {
+	if ((x % SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS) != 0U ||
+		(width % SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS) != 0U) {
 		return false;
 	}
 
@@ -50,7 +52,7 @@ static esp_err_t ssd1363_basic_set_full_window(void)
 {
 	return ssd1363_api_set_window(
 		0,
-		(SSD1363_ACTIVE_WIDTH / 4U) - 1U,
+		(SSD1363_ACTIVE_WIDTH / SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS) - 1U,
 		0,
 		SSD1363_ACTIVE_HEIGHT - 1U
 	);
@@ -159,6 +161,58 @@ esp_err_t ssd1363_basic_use_default_gray_table(void)
 	return ssd1363_api_use_default_gray_table();
 }
 
+/* Set the raw SSD1363 display clock register. */
+esp_err_t ssd1363_basic_set_display_clock(uint8_t clock_setting)
+{
+	return ssd1363_api_set_display_clock(clock_setting);
+}
+
+/* Set the panel multiplex ratio. */
+esp_err_t ssd1363_basic_set_multiplex_ratio(uint8_t ratio)
+{
+	if (ratio >= SSD1363_ACTIVE_HEIGHT) {
+		return ESP_ERR_INVALID_ARG;
+	}
+
+	return ssd1363_api_set_multiplex_ratio(ratio);
+}
+
+/* Set the SSD1363 phase length register. */
+esp_err_t ssd1363_basic_set_phase_length(uint8_t phase_length)
+{
+	return ssd1363_api_set_phase_length(phase_length);
+}
+
+/* Set the SSD1363 precharge voltage register. */
+esp_err_t ssd1363_basic_set_precharge_voltage(uint8_t voltage)
+{
+	return ssd1363_api_set_precharge_voltage(voltage);
+}
+
+/* Set the SSD1363 second-precharge period register. */
+esp_err_t ssd1363_basic_set_second_precharge(uint8_t period)
+{
+	return ssd1363_api_set_second_precharge(period);
+}
+
+/* Set the SSD1363 VCOMH register. */
+esp_err_t ssd1363_basic_set_vcomh(uint8_t level)
+{
+	return ssd1363_api_set_vcomh(level);
+}
+
+/* Set the SSD1363 segment low-voltage register pair. */
+esp_err_t ssd1363_basic_set_segment_low_voltage(uint8_t level0, uint8_t level1)
+{
+	return ssd1363_api_set_segment_low_voltage(level0, level1);
+}
+
+/* Set the SSD1363 display-enhancement register pair. */
+esp_err_t ssd1363_basic_set_display_enhancement(uint8_t value0, uint8_t value1)
+{
+	return ssd1363_api_set_display_enhancement(value0, value1);
+}
+
 /* Write a full logical framebuffer to the panel. */
 esp_err_t ssd1363_basic_write_buffer(const uint8_t *buffer, size_t len)
 {
@@ -193,8 +247,8 @@ esp_err_t ssd1363_basic_write_area(uint16_t x, uint16_t y, uint16_t width, uint1
 {
 	const size_t expected_len = ((size_t)width * (size_t)height) / 2U;
 	const size_t row_len = width / 2U;
-	const uint8_t start_column = (uint8_t)(x / 4U);
-	const uint8_t end_column = (uint8_t)(((x + width) / 4U) - 1U);
+	const uint8_t start_column = (uint8_t)(x / SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS);
+	const uint8_t end_column = (uint8_t)(((x + width) / SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS) - 1U);
 	const uint8_t start_row = (uint8_t)y;
 	const uint8_t end_row = (uint8_t)(y + height - 1U);
 	uint8_t row_buffer[SSD1363_ACTIVE_WIDTH / 2U];

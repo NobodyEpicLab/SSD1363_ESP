@@ -79,13 +79,17 @@ static esp_err_t ssd1363_interface_init_spi(void)
         return ESP_OK;
     }
 
+    if (SSD1363_SPI_MOSI_PIN < 0 || SSD1363_SPI_SCLK_PIN < 0 || SSD1363_SPI_DC_PIN < 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     spi_bus_config_t bus_config = {
         .mosi_io_num = SSD1363_SPI_MOSI_PIN,
         .miso_io_num = -1,
         .sclk_io_num = SSD1363_SPI_SCLK_PIN,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-        .max_transfer_sz = 0,
+        .max_transfer_sz = SSD1363_ACTIVE_WIDTH / 2,
     };
 
     spi_device_interface_config_t device_config = {

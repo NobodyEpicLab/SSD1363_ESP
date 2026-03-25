@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "ssd1363_basic.h"
+#include "ssd1363_config.h"
 
 #define SSD1363_FRAMEBUFFER_ROW_BYTES      (SSD1363_FRAMEBUFFER_WIDTH / 2U)
 
@@ -83,13 +84,13 @@ esp_err_t ssd1363_framebuffer_set_pixel(ssd1363_framebuffer_t *framebuffer, uint
 	value = framebuffer->data[index];
 
 	if ((x & 1U) == 0U) {
-		#if SSD1363_GDDRAM_EVEN_PIXEL_HIGH_NIBBLE
+		#if SSD1363_PANEL_EVEN_PIXEL_HIGH_NIBBLE
 		framebuffer->data[index] = (uint8_t)((value & 0x0FU) | (gray4 << 4));
 		#else
 		framebuffer->data[index] = (uint8_t)((value & 0xF0U) | gray4);
 		#endif
 	} else {
-		#if SSD1363_GDDRAM_EVEN_PIXEL_HIGH_NIBBLE
+		#if SSD1363_PANEL_EVEN_PIXEL_HIGH_NIBBLE
 		framebuffer->data[index] = (uint8_t)((value & 0xF0U) | gray4);
 		#else
 		framebuffer->data[index] = (uint8_t)((value & 0x0FU) | (gray4 << 4));
@@ -116,13 +117,13 @@ esp_err_t ssd1363_framebuffer_get_pixel(const ssd1363_framebuffer_t *framebuffer
 	value = framebuffer->data[index];
 
 	if ((x & 1U) == 0U) {
-		#if SSD1363_GDDRAM_EVEN_PIXEL_HIGH_NIBBLE
+		#if SSD1363_PANEL_EVEN_PIXEL_HIGH_NIBBLE
 		*gray4 = (uint8_t)((value >> 4) & 0x0FU);
 		#else
 		*gray4 = (uint8_t)(value & 0x0FU);
 		#endif
 	} else {
-		#if SSD1363_GDDRAM_EVEN_PIXEL_HIGH_NIBBLE
+		#if SSD1363_PANEL_EVEN_PIXEL_HIGH_NIBBLE
 		*gray4 = (uint8_t)(value & 0x0FU);
 		#else
 		*gray4 = (uint8_t)((value >> 4) & 0x0FU);
@@ -298,8 +299,9 @@ esp_err_t ssd1363_framebuffer_flush_rect(const ssd1363_framebuffer_t *framebuffe
 		return ESP_ERR_INVALID_ARG;
 	}
 
-	aligned_x = (uint16_t)(x & ~0x3U);
-	x_end = (uint16_t)(((x + width + 3U) / 4U) * 4U);
+	aligned_x = (uint16_t)((x / SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS) * SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS);
+	x_end = (uint16_t)((((x + width + (SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS - 1U)) /
+		SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS) * SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS));
 	if (x_end > SSD1363_FRAMEBUFFER_WIDTH) {
 		x_end = SSD1363_FRAMEBUFFER_WIDTH;
 	}

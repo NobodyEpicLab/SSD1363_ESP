@@ -200,6 +200,115 @@ esp_err_t ssd1363_basic_set_remap(uint8_t remap_byte0, uint8_t remap_byte1);
  */
 esp_err_t ssd1363_basic_use_default_gray_table(void);
 
+/*
+ * Set the display clock divider / oscillator register.
+ *
+ * Arguments:
+ * - clock_setting: raw SSD1363 clock register value
+ *   - valid range: 0x00..0xFF
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - an ESP-IDF error code if the command fails
+ */
+esp_err_t ssd1363_basic_set_display_clock(uint8_t clock_setting);
+
+/*
+ * Set multiplex ratio.
+ *
+ * Arguments:
+ * - ratio: COM multiplex ratio register value
+ *   - valid range for a 128-row panel: 0x00..0x7F
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - ESP_ERR_INVALID_ARG if ratio is outside the active height range
+ * - an ESP-IDF error code if the command fails
+ */
+esp_err_t ssd1363_basic_set_multiplex_ratio(uint8_t ratio);
+
+/*
+ * Set phase length.
+ *
+ * Arguments:
+ * - phase_length: raw SSD1363 phase length register value
+ *   - valid range: 0x00..0xFF
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - an ESP-IDF error code if the command fails
+ */
+esp_err_t ssd1363_basic_set_phase_length(uint8_t phase_length);
+
+/*
+ * Set precharge voltage.
+ *
+ * Arguments:
+ * - voltage: raw SSD1363 precharge voltage register value
+ *   - valid range: 0x00..0xFF
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - an ESP-IDF error code if the command fails
+ */
+esp_err_t ssd1363_basic_set_precharge_voltage(uint8_t voltage);
+
+/*
+ * Set second precharge period.
+ *
+ * Arguments:
+ * - period: raw SSD1363 second-precharge register value
+ *   - valid range: 0x00..0xFF
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - an ESP-IDF error code if the command fails
+ */
+esp_err_t ssd1363_basic_set_second_precharge(uint8_t period);
+
+/*
+ * Set VCOMH level.
+ *
+ * Arguments:
+ * - level: raw SSD1363 VCOMH register value
+ *   - valid range: 0x00..0xFF
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - an ESP-IDF error code if the command fails
+ */
+esp_err_t ssd1363_basic_set_vcomh(uint8_t level);
+
+/*
+ * Set the SSD1363 segment low-voltage register pair.
+ *
+ * Arguments:
+ * - level0: first raw segment low-voltage register byte
+ *   - valid range: 0x00..0xFF
+ * - level1: second raw segment low-voltage register byte
+ *   - valid range: 0x00..0xFF
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - an ESP-IDF error code if the command fails
+ */
+esp_err_t ssd1363_basic_set_segment_low_voltage(uint8_t level0, uint8_t level1);
+
+/*
+ * Set the SSD1363 display-enhancement register pair.
+ *
+ * Arguments:
+ * - value0: first raw display-enhancement register byte
+ *   - valid range: 0x00..0xFF
+ * - value1: second raw display-enhancement register byte
+ *   - valid range: 0x00..0xFF
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - an ESP-IDF error code if the command fails
+ */
+esp_err_t ssd1363_basic_set_display_enhancement(uint8_t value0, uint8_t value1);
+
 /* -------------------------------------------------------------------------- */
 /* Buffer Writes                                                               */
 /* -------------------------------------------------------------------------- */

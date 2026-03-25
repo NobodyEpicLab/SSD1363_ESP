@@ -154,28 +154,13 @@ esp_err_t ssd1363_api_set_vcomh(uint8_t level)
 
 esp_err_t ssd1363_api_panel_init(void)
 {
-    const uint8_t unlock_code = 0x12;
-    const uint8_t display_clock = 0x30;
-    const uint8_t gpio_config = 0x00;
-    const uint8_t function_selection = 0x01;
-    const uint8_t vsl0 = 0xA0;
-    const uint8_t vsl1 = 0xFD;
-    const uint8_t contrast = 0x7F;
-    const uint8_t master_contrast = 0x0F;
-    const uint8_t phase_length = 0x74;
-    const uint8_t enhancement0 = 0x82;
-    const uint8_t enhancement1 = 0x20;
-    const uint8_t precharge_voltage = 0x1F;
-    const uint8_t second_precharge = 0x08;
-    const uint8_t vcomh = 0x07;
-
-    esp_err_t err = ssd1363_api_unlock_command_interface(unlock_code);
+    esp_err_t err = ssd1363_api_unlock_command_interface(SSD1363_PANEL_INIT_UNLOCK_CODE);
     if (err != ESP_OK) return err;
 
     err = ssd1363_api_display_off();
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_display_clock(display_clock);
+    err = ssd1363_api_set_display_clock(SSD1363_PANEL_INIT_DISPLAY_CLOCK);
     if (err != ESP_OK) return err;
 
     err = ssd1363_api_set_multiplex_ratio(SSD1363_MULTIPLEX_RATIO);
@@ -190,37 +175,37 @@ esp_err_t ssd1363_api_panel_init(void)
     err = ssd1363_api_set_remap(SSD1363_REMAP_BYTE0, SSD1363_REMAP_BYTE1);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_gpio(gpio_config);
+    err = ssd1363_api_set_gpio(SSD1363_PANEL_INIT_GPIO_CONFIG);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_function_selection(function_selection);
+    err = ssd1363_api_set_function_selection(SSD1363_PANEL_INIT_FUNCTION_SELECTION);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_segment_low_voltage(vsl0, vsl1);
+    err = ssd1363_api_set_segment_low_voltage(SSD1363_PANEL_INIT_VSL0, SSD1363_PANEL_INIT_VSL1);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_contrast(contrast);
+    err = ssd1363_api_set_contrast(SSD1363_PANEL_INIT_CONTRAST);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_master_contrast(master_contrast);
+    err = ssd1363_api_set_master_contrast(SSD1363_PANEL_INIT_MASTER_CONTRAST);
     if (err != ESP_OK) return err;
 
     err = ssd1363_api_use_default_gray_table();
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_phase_length(phase_length);
+    err = ssd1363_api_set_phase_length(SSD1363_PANEL_INIT_PHASE_LENGTH);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_display_enhancement(enhancement0, enhancement1);
+    err = ssd1363_api_set_display_enhancement(SSD1363_PANEL_INIT_ENHANCEMENT0, SSD1363_PANEL_INIT_ENHANCEMENT1);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_precharge_voltage(precharge_voltage);
+    err = ssd1363_api_set_precharge_voltage(SSD1363_PANEL_INIT_PRECHARGE_VOLTAGE);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_second_precharge(second_precharge);
+    err = ssd1363_api_set_second_precharge(SSD1363_PANEL_INIT_SECOND_PRECHARGE);
     if (err != ESP_OK) return err;
 
-    err = ssd1363_api_set_vcomh(vcomh);
+    err = ssd1363_api_set_vcomh(SSD1363_PANEL_INIT_VCOMH);
     if (err != ESP_OK) return err;
 
     err = ssd1363_api_set_display_mode_normal();
@@ -247,13 +232,13 @@ esp_err_t ssd1363_api_fill_active_area(uint8_t pattern, uint16_t width, uint16_t
         return ESP_ERR_INVALID_ARG;
     }
 
-    if ((width % 4U) != 0U || width == 0U || height == 0U) {
+    if ((width % SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS) != 0U || width == 0U || height == 0U) {
         return ESP_ERR_INVALID_ARG;
     }
 
     memset(line_buffer, pattern, width / 2);
 
-    end_column = (uint8_t)((width / 4U) - 1U);
+    end_column = (uint8_t)((width / SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS) - 1U);
 
     esp_err_t err = ssd1363_api_set_window(0, end_column, 0, height - 1);
     if (err != ESP_OK) {
@@ -310,8 +295,8 @@ esp_err_t ssd1363_api_data_buffer(const uint8_t *data, size_t len)
 esp_err_t ssd1363_api_set_column_address(uint8_t start_column, uint8_t end_column)
 {
     uint8_t column_args[2] = {
-        (uint8_t)(SSD1363_COLUMN_OFFSET + start_column),
-        (uint8_t)(SSD1363_COLUMN_OFFSET + end_column),
+        (uint8_t)(SSD1363_PANEL_COLUMN_OFFSET + start_column),
+        (uint8_t)(SSD1363_PANEL_COLUMN_OFFSET + end_column),
     };
 
     return ssd1363_api_write_command_with_data(SSD1363_CMD_SET_COLUMN_ADDR, column_args, sizeof(column_args));

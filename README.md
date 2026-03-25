@@ -47,6 +47,53 @@ What is not final yet:
 - More SSD1363 commands still need dedicated wrappers
 - Documentation still needs to be expanded
 
+## Minimum Usable API
+
+If you want to use the library without touching low-level controller commands, start with the `ssd1363_basic`, `ssd1363_framebuffer`, and `ssd1363_text` layers.
+
+Recommended starting point:
+
+- `ssd1363_basic_init(bus)`
+	- initialize transport and panel
+- `ssd1363_basic_display_on()` / `ssd1363_basic_display_off()`
+	- panel output control
+- `ssd1363_basic_set_contrast(value)`
+	- quick visible brightness/current tuning
+- `ssd1363_basic_set_master_contrast(value)`
+	- coarse global contrast control
+- `ssd1363_framebuffer_init(&fb)`
+	- initialize framebuffer state
+- `ssd1363_framebuffer_fill(&fb, gray)`
+	- clear or fill the whole framebuffer
+- `ssd1363_framebuffer_set_pixel(...)`
+- `ssd1363_framebuffer_draw_line(...)`
+- `ssd1363_framebuffer_draw_rect(...)`
+- `ssd1363_framebuffer_fill_rect(...)`
+	- basic drawing primitives
+- `ssd1363_text_draw_string(...)`
+	- draw text into the framebuffer
+- `ssd1363_framebuffer_flush(&fb)`
+	- write the full framebuffer to the display
+- `ssd1363_framebuffer_flush_rect(&fb, x, y, w, h)`
+	- update only part of the display for smaller changes
+
+If you need more tuning but still want to stay above the raw command layer, the `basic` layer now also exposes helpers for:
+
+- start line
+- display offset
+- remap
+- default gray table
+- display clock
+- multiplex ratio
+- phase length
+- precharge voltage
+- second precharge
+- VCOMH
+- segment low voltage
+- display enhancement
+
+The lower `ssd1363_api` layer is still available when you want direct SSD1363 register-level control.
+
 ## Tested Setup
 
 Current known working setup during development:

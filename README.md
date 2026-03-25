@@ -4,6 +4,8 @@ SSD1363 OLED library project for ESP32, focused on real SSD1363 controller suppo
 
 This project was created because usable SSD1363 libraries are limited, and because grayscale support is important for these displays.
 
+THIS PROJECT IS STILL VERY MUCH IN PROGRESS, but some of the function works already, gray scale and text for example. I could not find any librarys that would support gray for this display scale so decided to write it myself with strong GPT support :)
+
 ## What This Is
 
 This repository is an in-progress SSD1363 driver and graphics library for:

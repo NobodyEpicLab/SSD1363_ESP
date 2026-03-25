@@ -24,6 +24,25 @@
 #define SSD1363_REMAP_BYTE0           0x32
 #define SSD1363_REMAP_BYTE1           0x00
 
+/*
+ * These values describe how this specific panel expects packed grayscale pixel
+ * data in SSD1363 GDDRAM. They do not add visual offsets or move logical pixel
+ * coordinates around; they only define how a logical framebuffer row is encoded
+ * before being sent over the bus.
+ *
+ * - If set to 1, an even x pixel is stored in the high nibble of its byte.
+ * - If set to 0, an even x pixel is stored in the low nibble of its byte.
+ */
+#define SSD1363_GDDRAM_EVEN_PIXEL_HIGH_NIBBLE 0
+
+/*
+ * SSD1363 column addressing operates in 4-pixel groups. Some panels wire the
+ * two bytes inside each 4-pixel group in reverse bus order. When enabled, the
+ * driver encodes each logical 4-pixel group into the byte order expected by
+ * this panel before sending it to GDDRAM.
+ */
+#define SSD1363_GDDRAM_SWAP_4PX_GROUP_BYTES   1
+
 #define SSD1363_I2C_PORT               0
 #define SSD1363_I2C_SDA_PIN            21
 #define SSD1363_I2C_SCL_PIN            22

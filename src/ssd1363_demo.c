@@ -11,12 +11,21 @@
 
 #include "ssd1363_basic.h"
 #include "ssd1363_config.h"
+#include "ssd1363_fonts.h"
 #include "ssd1363_framebuffer.h"
+#include "ssd1363_text.h"
 
 #define SSD1363_FRAMEBUFFER_SIZE ((SSD1363_ACTIVE_WIDTH * SSD1363_ACTIVE_HEIGHT) / 2)
 
 static uint8_t g_framebuffer[SSD1363_FRAMEBUFFER_SIZE];
 static ssd1363_framebuffer_t g_gfx_framebuffer;
+
+static void ssd1363_demo_run_i2c_smoke_test_impl(void);
+
+void ssd1363_demo_run_i2c_smoke_test(void)
+{
+	ssd1363_demo_run_i2c_smoke_test_impl();
+}
 
 static void build_vertical_stripe_pattern(uint8_t on_nibble, uint8_t off_nibble)
 {
@@ -131,10 +140,90 @@ static esp_err_t show_framebuffer_primitives(void)
 	return ssd1363_framebuffer_flush(&g_gfx_framebuffer);
 }
 
-void ssd1363_demo_run_i2c_smoke_test(void)
+static esp_err_t show_grayscale_text_scene(void)
 {
-	static const uint8_t patterns[] = {0x00, 0xFF, 0xF0, 0x0F, 0x55, 0xAA};
+	esp_err_t err;
 
+	ssd1363_framebuffer_init(&g_gfx_framebuffer);
+	ssd1363_framebuffer_fill(&g_gfx_framebuffer, 0x0);
+
+	for (uint16_t gray = 0; gray < 16U; ++gray) {
+		err = ssd1363_framebuffer_fill_rect(&g_gfx_framebuffer, (uint16_t)(gray * 16U), 8U, 16U, 28U, (uint8_t)gray);
+		if (err != ESP_OK) {
+			return err;
+		}
+	}
+
+	err = ssd1363_framebuffer_draw_rect(&g_gfx_framebuffer, 0U, 8U, SSD1363_FRAMEBUFFER_WIDTH, 28U, 0xFU);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_text_draw_string(
+		&g_gfx_framebuffer,
+		8U,
+		42U,
+		"GRAY SCALE",
+		&ssd1363_font_freemono12pt7b,
+		0x0FU,
+		0x00U,
+		SSD1363_FRAMEBUFFER_BITMAP_TRANSPARENT,
+		NULL
+	);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_text_draw_string(
+		&g_gfx_framebuffer,
+		8U,
+		70U,
+		"HELLO WORLD",
+		&ssd1363_font_freemono12pt7b,
+		0x0EU,
+		0x00U,
+		SSD1363_FRAMEBUFFER_BITMAP_TRANSPARENT,
+		NULL
+	);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_text_draw_string(
+		&g_gfx_framebuffer,
+		8U,
+		98U,
+		"0123456789",
+		&ssd1363_font_freemono12pt7b,
+		0x09U,
+		0x00U,
+		SSD1363_FRAMEBUFFER_BITMAP_TRANSPARENT,
+		NULL
+	);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_text_draw_string(
+		&g_gfx_framebuffer,
+		8U,
+		110U,
+		"FREEMONO 12PT",
+		&ssd1363_font_freemono12pt7b,
+		0x0FU,
+		0x00U,
+		SSD1363_FRAMEBUFFER_BITMAP_TRANSPARENT,
+		NULL
+	);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	return ssd1363_framebuffer_flush(&g_gfx_framebuffer);
+}
+
+static void ssd1363_demo_run_i2c_smoke_test_impl(void)
+{
 	printf("SSD1363 smoke test starting\n");
 	printf("Configured I2C pins: SDA=%d SCL=%d\n", SSD1363_I2C_SDA_PIN, SSD1363_I2C_SCL_PIN);
 	printf("Configured I2C address: 0x%02X\n", SSD1363_I2C_ADDRESS);
@@ -163,60 +252,17 @@ void ssd1363_demo_run_i2c_smoke_test(void)
 	}
 
 	printf("Address 0x%02X acknowledged, basic example initialized\n", SSD1363_I2C_ADDRESS);
-	printf("Cycling fill and stripe patterns\n");
+	printf("Displaying text-only diagnostic scene\n");
+
+	err = show_grayscale_text_scene();
+	if (err != ESP_OK) {
+		printf("Text-only diagnostic scene failed: %s\n", esp_err_to_name(err));
+		return;
+	}
+
+	printf("Text-only diagnostic scene displayed and held on screen\n");
 
 	while (true) {
-		err = ssd1363_basic_clear();
-		if (err != ESP_OK) {
-			printf("Full black fill failed: %s\n", esp_err_to_name(err));
-			return;
-		}
-		printf("Displayed direct fill 0x00\n");
 		vTaskDelay(pdMS_TO_TICKS(1000));
-
-		err = ssd1363_basic_fill(0xFF);
-		if (err != ESP_OK) {
-			printf("Full white fill failed: %s\n", esp_err_to_name(err));
-			return;
-		}
-		printf("Displayed direct fill 0xFF\n");
-		vTaskDelay(pdMS_TO_TICKS(1000));
-
-		build_horizontal_stripe_pattern();
-		err = write_framebuffer();
-		if (err != ESP_OK) {
-			printf("Horizontal stripe pattern failed: %s\n", esp_err_to_name(err));
-			return;
-		}
-		printf("Displayed horizontal stripe pattern\n");
-		vTaskDelay(pdMS_TO_TICKS(1000));
-
-		build_vertical_stripe_pattern(0xF, 0x0);
-		err = write_framebuffer();
-		if (err != ESP_OK) {
-			printf("Vertical stripe pattern failed: %s\n", esp_err_to_name(err));
-			return;
-		}
-		printf("Displayed vertical stripe pattern\n");
-		vTaskDelay(pdMS_TO_TICKS(1000));
-
-		err = show_framebuffer_primitives();
-		if (err != ESP_OK) {
-			printf("Framebuffer primitive scene failed: %s\n", esp_err_to_name(err));
-			return;
-		}
-		printf("Displayed framebuffer primitive scene\n");
-		vTaskDelay(pdMS_TO_TICKS(1000));
-
-		for (size_t index = 0; index < (sizeof(patterns) / sizeof(patterns[0])); ++index) {
-			err = write_fullscreen_pattern(patterns[index]);
-			if (err != ESP_OK) {
-				printf("Pattern 0x%02X write failed: %s\n", patterns[index], esp_err_to_name(err));
-				return;
-			}
-
-			printf("Displayed pattern 0x%02X\n", patterns[index]);
-			vTaskDelay(pdMS_TO_TICKS(1000));
-		}
 	}
 }

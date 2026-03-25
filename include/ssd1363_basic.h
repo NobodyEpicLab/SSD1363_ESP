@@ -18,6 +18,7 @@ esp_err_t ssd1363_basic_display_off(void);
 esp_err_t ssd1363_basic_clear(void);
 esp_err_t ssd1363_basic_fill(uint8_t pattern);
 esp_err_t ssd1363_basic_write_buffer(const uint8_t *buffer, size_t len);
+esp_err_t ssd1363_basic_write_area(uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint8_t *buffer, size_t len);
 
 #ifdef __cplusplus
 }

@@ -48,7 +48,8 @@ Port the SSD1322-oriented library structure into this ESP-IDF PlatformIO project
 | 6. Confirm panel wiring and parameters | In progress | I2C pins accepted, no reset pin confirmed, I2C address now confirmed as `0x3C` |
 | 7. Finalize SSD1363 init sequence | In progress | Working baseline is now being frozen into the core driver API; remaining work is to validate which analog/power values are strictly required |
 | 8. Bring up display with smoke test | Done | Full display is now responding across the whole panel |
-| 9. Port framebuffer/GFX layer | In progress | A fixed-size `256x128` 4bpp framebuffer module is being added with flush, pixel access, and rectangle primitives |
+| 9. Port framebuffer/GFX layer | In progress | The framebuffer layer now has pixel access, rectangle primitives, line drawing, icon-ready bitmap blit support, and a first partial-flush path for small updates |
+| 9d. Add text layer | In progress | A tiny internal font format, grayscale text rendering, and the first built-in small and larger font descriptors are being added on top of the framebuffer layer |
 | 9a. Expand SSD1363 command coverage | In progress | The baseline init path is being converted from raw writes into named command wrappers, starting with display, timing, and analog-tuning commands |
 | 9b. Turn project into reusable library | In progress | Main entry is being reduced toward user code only, with demo and driver logic moved into dedicated files |
 | 9c. Add example-layer API | In progress | A thin `basic` layer is being introduced above the core driver so user code and demos do not need to talk directly to low-level controller functions |
@@ -60,11 +61,15 @@ Port the SSD1322-oriented library structure into this ESP-IDF PlatformIO project
 - `include/ssd1363_interface.h`
 - `include/ssd1363_api.h`
 - `include/ssd1363_basic.h`
+- `include/ssd1363_fonts.h`
 - `include/ssd1363_framebuffer.h`
+- `include/ssd1363_text.h`
 - `src/ssd1363_interface.c`
 - `src/ssd1363_api.c`
 - `src/ssd1363_basic.c`
+- `src/ssd1363_fonts.c`
 - `src/ssd1363_framebuffer.c`
+- `src/ssd1363_text.c`
 - `src/main.c`
 
 ## Assumptions In The Current Scaffold
@@ -113,12 +118,21 @@ These are placeholders and must be validated against the real hardware:
 - A thin `ssd1363_basic` layer now sits above the low-level API
 - This layer is intended to give demos and future user code a stable starting point without exposing raw controller details too early
 - The current `basic` layer handles init, display on/off, clear, full-screen fill, and full-buffer write
+- The basic layer now also provides bounded area writes for optimized partial screen updates when the pixel region is aligned to SSD1363 column-addressing requirements
 
 ### Framebuffer layer
 
 - A dedicated fixed-size `256x128` `4bpp` framebuffer module now sits above the basic display layer
-- This module provides buffer ownership, full-buffer clear/fill, single-pixel read/write, rectangle outline/fill primitives, and a full-frame flush path
-- Pixel packing follows the active display write format already used by the project: even `x` pixel in the high nibble, odd `x` pixel in the low nibble
+- This module provides buffer ownership, full-buffer clear/fill, single-pixel read/write, rectangle outline/fill primitives, line drawing, monochrome bitmap blit support for small icons, and both full-frame and partial flush paths
+- Pixel packing is now confirmed for this module as: even `x` pixel in the low nibble, odd `x` pixel in the high nibble, plus a byte swap inside each SSD1363 `4-pixel` column group before data is written to GDDRAM
+
+### Text layer
+
+- A small internal font format now sits above the framebuffer layer, with sparse glyph lookup and string measurement/draw helpers
+- Text rendering supports grayscale foreground values plus either transparent or opaque background mode
+- The first built-in font set currently uses a compact bitmap asset with two size descriptors: a small `5x7` presentation and a larger doubled `10x14` presentation
+- Text drawing is designed to work with partial flush by returning changed bounds that can be passed to the framebuffer rectangle flush path
+- The text layer is being moved to an SSD1322-style `GFXfont` backend so bundled fonts stay readable in source form instead of opaque byte blobs
 
 ### Future driver goal
 
@@ -160,6 +174,9 @@ These items are planned for the future driver/library phase:
 20. Preserve I2C as the working baseline while keeping SPI support ready for later validation
 21. Validate and document which controller features are fully implemented versus intentionally deferred
 22. Prepare the project so it can be published as a useful SSD1363 library rather than only a one-off experiment
+23. Refactor the confirmed panel-specific GDDRAM packing settings into a cleaner panel-format abstraction so the driver reads as explicit encoding rather than ad hoc conditionals
+24. Remove or simplify the now-unused smoke-test demo helpers and leave a smaller stable example scene
+25. Document the difference between logical framebuffer coordinates and panel-specific GDDRAM byte packing so future maintenance does not confuse encoding with pixel offsets
 
 ### Smoke test
 
@@ -177,6 +194,7 @@ These items are planned for the future driver/library phase:
 - Third visual result: full width is correct, with the middle 64 rows active and top/bottom 32 rows inactive
 - Fourth visual result: the startup frame can light the lower region as white-noise while the top stays black, and the intended stripe diagnostics appear as columns rather than expected rows
 - Final smoke-test result: the whole display is now working
+- Final text result: text is now sharp and clean after matching the panel's real packed-pixel and `4-pixel` group byte order
 - The user has now confirmed the module itself is labeled `256x128`, so this symptom is no longer treated as evidence of a true 64-row panel
 - The added column-oriented symptom points to row/column remap or address increment being wrong, not just the panel height
 - The newest narrow-strip symptom points to the RAM column window itself being programmed in the wrong units
@@ -287,5 +305,6 @@ Build a minimal smoke test that:
 - Added a first `basic` example layer inspired by the structure of external display libraries, but kept all SSD1363 controller behavior local to this project
 - Continued converting the working SSD1363 init sequence from raw command writes into named API wrappers so the public driver header better matches a command-table-oriented library
 - Added the first framebuffer/GFX building block with a dedicated `4bpp` framebuffer module, pixel helpers, rectangle primitives, and flush-through-basic-display support
+- Added line primitives, 1bpp bitmap blit support for icon/text building blocks, and a first alignment-aware partial flush path to reduce full-screen updates for small changes
 - Added the long-term requirement for true grayscale or antialiased text as a separate future rendering task
 - Established this tracker file as the required running project log

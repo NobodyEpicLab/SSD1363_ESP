@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+/* Expand a bounds box so partial updates can flush the touched region. */
 static void ssd1363_text_bounds_include(ssd1363_text_bounds_t *bounds, uint16_t x, uint16_t y, uint16_t width, uint16_t height)
 {
 	if (bounds == NULL || width == 0U || height == 0U) {
@@ -34,6 +35,7 @@ static void ssd1363_text_bounds_include(ssd1363_text_bounds_t *bounds, uint16_t 
 	bounds->height = (uint16_t)(merged_y2 - merged_y1);
 }
 
+/* Normalize bitmap-font input to uppercase for the built-in glyph tables. */
 static char ssd1363_text_normalize_char(char ch)
 {
 	if (ch >= 'a' && ch <= 'z') {
@@ -43,6 +45,7 @@ static char ssd1363_text_normalize_char(char ch)
 	return ch;
 }
 
+/* Look up one glyph in the bitmap-font table, falling back when needed. */
 static const ssd1363_font_glyph_t *ssd1363_text_find_bitmap_glyph(const ssd1363_font_t *font, char ch)
 {
 	const char normalized = ssd1363_text_normalize_char(ch);
@@ -62,11 +65,13 @@ static const ssd1363_font_glyph_t *ssd1363_text_find_bitmap_glyph(const ssd1363_
 	return NULL;
 }
 
+/* Check whether the current font uses the Adafruit GFX backend. */
 static bool ssd1363_text_font_is_gfx(const ssd1363_font_t *font)
 {
 	return font != NULL && font->backend == SSD1363_FONT_BACKEND_GFX && font->gfx_font != NULL;
 }
 
+/* Read one pixel bit from a packed 1bpp bitmap-font glyph. */
 static bool ssd1363_text_bitmap_pixel_on(const uint8_t *bitmap, uint8_t width, uint8_t x, uint8_t y)
 {
 	const uint8_t stride = (uint8_t)((width + 7U) / 8U);
@@ -76,6 +81,7 @@ static bool ssd1363_text_bitmap_pixel_on(const uint8_t *bitmap, uint8_t width, u
 	return (bitmap[index] & mask) != 0U;
 }
 
+/* Look up one glyph in a GFXfont, applying the configured fallback character. */
 static const GFXglyph *ssd1363_text_find_gfx_glyph(const ssd1363_font_t *font, char ch)
 {
 	if (!ssd1363_text_font_is_gfx(font)) {
@@ -93,6 +99,7 @@ static const GFXglyph *ssd1363_text_find_gfx_glyph(const ssd1363_font_t *font, c
 	return &font->gfx_font->glyph[glyph_code - font->gfx_font->first];
 }
 
+/* Fill a rectangle but clip it to the framebuffer bounds first. */
 static void ssd1363_text_fill_clipped_rect(ssd1363_framebuffer_t *framebuffer, int32_t x, int32_t y, uint16_t width, uint16_t height, uint8_t gray4, ssd1363_text_bounds_t *updated_bounds)
 {
 	if (framebuffer == NULL || width == 0U || height == 0U) {
@@ -123,6 +130,7 @@ static void ssd1363_text_fill_clipped_rect(ssd1363_framebuffer_t *framebuffer, i
 	);
 }
 
+/* Draw one GFXfont character and optionally report its advance width. */
 static esp_err_t ssd1363_text_gfx_draw_char(ssd1363_framebuffer_t *framebuffer, uint16_t x, uint16_t y, char ch, const ssd1363_font_t *font, uint8_t foreground_gray4, uint8_t background_gray4, ssd1363_framebuffer_bitmap_mode_t background_mode, ssd1363_text_bounds_t *updated_bounds, uint16_t *advance_width)
 {
 	const GFXglyph *glyph = ssd1363_text_find_gfx_glyph(font, ch);
@@ -171,6 +179,16 @@ static esp_err_t ssd1363_text_gfx_draw_char(ssd1363_framebuffer_t *framebuffer, 
 	return ESP_OK;
 }
 
+/*
+ * Clear a bounds structure used for partial text updates.
+ *
+ * Arguments:
+ * - bounds: bounds object to reset
+ *   - must not be NULL
+ *
+ * Returns:
+ * - none
+ */
 void ssd1363_text_bounds_clear(ssd1363_text_bounds_t *bounds)
 {
 	if (bounds == NULL) {
@@ -183,6 +201,24 @@ void ssd1363_text_bounds_clear(ssd1363_text_bounds_t *bounds)
 	bounds->height = 0U;
 }
 
+/*
+ * Measure the pixel size of a string for the selected font.
+ *
+ * Arguments:
+ * - font: font definition to use
+ *   - must not be NULL
+ * - text: zero-terminated string to measure
+ *   - must not be NULL
+ * - width: destination for measured width in pixels
+ *   - must not be NULL
+ * - height: destination for measured height in pixels
+ *   - must not be NULL
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - ESP_ERR_INVALID_ARG for invalid pointers
+ * - ESP_ERR_NOT_FOUND if a glyph cannot be resolved
+ */
 esp_err_t ssd1363_text_measure_string(const ssd1363_font_t *font, const char *text, uint16_t *width, uint16_t *height)
 {
 	if (font == NULL || text == NULL || width == NULL || height == NULL) {
@@ -266,6 +302,35 @@ esp_err_t ssd1363_text_measure_string(const ssd1363_font_t *font, const char *te
 	return ESP_OK;
 }
 
+/*
+ * Draw one character into the local framebuffer.
+ *
+ * Arguments:
+ * - framebuffer: target framebuffer object
+ *   - must not be NULL
+ * - x: left pixel coordinate of the character cell
+ *   - valid range: 0..SSD1363_FRAMEBUFFER_WIDTH-1
+ * - y: top pixel coordinate of the character cell
+ *   - valid range: 0..SSD1363_FRAMEBUFFER_HEIGHT-1
+ * - ch: character to draw
+ *   - valid range: any 8-bit char supported by the active font
+ * - font: font definition to use
+ *   - must not be NULL
+ * - foreground_gray4: grayscale value for lit glyph pixels
+ *   - valid range: 0x00..0x0F
+ * - background_gray4: grayscale value for background fill in opaque mode
+ *   - valid range: 0x00..0x0F
+ * - background_mode: transparent or opaque background handling
+ *   - valid values: SSD1363_FRAMEBUFFER_BITMAP_TRANSPARENT or SSD1363_FRAMEBUFFER_BITMAP_OPAQUE
+ * - updated_bounds: optional bounds accumulator for partial updates
+ *   - may be NULL
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - ESP_ERR_INVALID_ARG for invalid framebuffer, font, or gray values
+ * - ESP_ERR_NOT_FOUND if a glyph cannot be resolved
+ * - an ESP-IDF error code if framebuffer drawing fails
+ */
 esp_err_t ssd1363_text_draw_char(ssd1363_framebuffer_t *framebuffer, uint16_t x, uint16_t y, char ch, const ssd1363_font_t *font, uint8_t foreground_gray4, uint8_t background_gray4, ssd1363_framebuffer_bitmap_mode_t background_mode, ssd1363_text_bounds_t *updated_bounds)
 {
 	if (framebuffer == NULL || font == NULL || foreground_gray4 > 0x0FU || background_gray4 > 0x0FU) {
@@ -315,6 +380,35 @@ esp_err_t ssd1363_text_draw_char(ssd1363_framebuffer_t *framebuffer, uint16_t x,
 	return ESP_OK;
 }
 
+/*
+ * Draw a zero-terminated string into the local framebuffer.
+ *
+ * Arguments:
+ * - framebuffer: target framebuffer object
+ *   - must not be NULL
+ * - x: left pixel coordinate of the first character
+ *   - valid range: 0..SSD1363_FRAMEBUFFER_WIDTH-1
+ * - y: top pixel coordinate of the first line
+ *   - valid range: 0..SSD1363_FRAMEBUFFER_HEIGHT-1
+ * - text: zero-terminated string to draw
+ *   - must not be NULL
+ * - font: font definition to use
+ *   - must not be NULL
+ * - foreground_gray4: grayscale value for lit glyph pixels
+ *   - valid range: 0x00..0x0F
+ * - background_gray4: grayscale value for background fill in opaque mode
+ *   - valid range: 0x00..0x0F
+ * - background_mode: transparent or opaque background handling
+ *   - valid values: SSD1363_FRAMEBUFFER_BITMAP_TRANSPARENT or SSD1363_FRAMEBUFFER_BITMAP_OPAQUE
+ * - updated_bounds: optional bounds accumulator for partial updates
+ *   - may be NULL
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - ESP_ERR_INVALID_ARG for invalid pointers or gray values
+ * - ESP_ERR_NOT_FOUND if a glyph cannot be resolved
+ * - an ESP-IDF error code if framebuffer drawing fails
+ */
 esp_err_t ssd1363_text_draw_string(ssd1363_framebuffer_t *framebuffer, uint16_t x, uint16_t y, const char *text, const ssd1363_font_t *font, uint8_t foreground_gray4, uint8_t background_gray4, ssd1363_framebuffer_bitmap_mode_t background_mode, ssd1363_text_bounds_t *updated_bounds)
 {
 	uint16_t cursor_x = x;
@@ -360,6 +454,33 @@ esp_err_t ssd1363_text_draw_string(ssd1363_framebuffer_t *framebuffer, uint16_t 
 	return ESP_OK;
 }
 
+/*
+ * Draw a string and flush the entire framebuffer to the display.
+ *
+ * Arguments:
+ * - framebuffer: target framebuffer object
+ *   - must not be NULL
+ * - x: left pixel coordinate of the first character
+ *   - valid range: 0..SSD1363_FRAMEBUFFER_WIDTH-1
+ * - y: top pixel coordinate of the first line
+ *   - valid range: 0..SSD1363_FRAMEBUFFER_HEIGHT-1
+ * - text: zero-terminated string to draw
+ *   - must not be NULL
+ * - font: font definition to use
+ *   - must not be NULL
+ * - foreground_gray4: grayscale value for lit glyph pixels
+ *   - valid range: 0x00..0x0F
+ * - background_gray4: grayscale value for background fill in opaque mode
+ *   - valid range: 0x00..0x0F
+ * - background_mode: transparent or opaque background handling
+ *   - valid values: SSD1363_FRAMEBUFFER_BITMAP_TRANSPARENT or SSD1363_FRAMEBUFFER_BITMAP_OPAQUE
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - ESP_ERR_INVALID_ARG for invalid pointers or gray values
+ * - ESP_ERR_NOT_FOUND if a glyph cannot be resolved
+ * - an ESP-IDF error code if drawing or flushing fails
+ */
 esp_err_t ssd1363_text_write_string_full(ssd1363_framebuffer_t *framebuffer, uint16_t x, uint16_t y, const char *text, const ssd1363_font_t *font, uint8_t foreground_gray4, uint8_t background_gray4, ssd1363_framebuffer_bitmap_mode_t background_mode)
 {
 	esp_err_t err = ssd1363_text_draw_string(framebuffer, x, y, text, font, foreground_gray4, background_gray4, background_mode, NULL);
@@ -370,6 +491,35 @@ esp_err_t ssd1363_text_write_string_full(ssd1363_framebuffer_t *framebuffer, uin
 	return ssd1363_framebuffer_flush(framebuffer);
 }
 
+/*
+ * Draw a string and flush only the updated bounds.
+ *
+ * Arguments:
+ * - framebuffer: target framebuffer object
+ *   - must not be NULL
+ * - x: left pixel coordinate of the first character
+ *   - valid range: 0..SSD1363_FRAMEBUFFER_WIDTH-1
+ * - y: top pixel coordinate of the first line
+ *   - valid range: 0..SSD1363_FRAMEBUFFER_HEIGHT-1
+ * - text: zero-terminated string to draw
+ *   - must not be NULL
+ * - font: font definition to use
+ *   - must not be NULL
+ * - foreground_gray4: grayscale value for lit glyph pixels
+ *   - valid range: 0x00..0x0F
+ * - background_gray4: grayscale value for background fill in opaque mode
+ *   - valid range: 0x00..0x0F
+ * - background_mode: transparent or opaque background handling
+ *   - valid values: SSD1363_FRAMEBUFFER_BITMAP_TRANSPARENT or SSD1363_FRAMEBUFFER_BITMAP_OPAQUE
+ * - updated_bounds: optional output for the flushed bounds
+ *   - may be NULL
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - ESP_ERR_INVALID_ARG for invalid pointers or gray values
+ * - ESP_ERR_NOT_FOUND if a glyph cannot be resolved
+ * - an ESP-IDF error code if drawing or flushing fails
+ */
 esp_err_t ssd1363_text_write_string_partial(ssd1363_framebuffer_t *framebuffer, uint16_t x, uint16_t y, const char *text, const ssd1363_font_t *font, uint8_t foreground_gray4, uint8_t background_gray4, ssd1363_framebuffer_bitmap_mode_t background_mode, ssd1363_text_bounds_t *updated_bounds)
 {
 	ssd1363_text_bounds_t local_bounds;

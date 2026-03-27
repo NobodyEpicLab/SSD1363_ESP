@@ -58,6 +58,20 @@ static esp_err_t ssd1363_basic_set_full_window(void)
 	);
 }
 
+static esp_err_t ssd1363_basic_set_window_pixels_internal(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
+{
+	const uint8_t start_column = (uint8_t)(x / SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS);
+	const uint8_t end_column = (uint8_t)(((x + width) / SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS) - 1U);
+	const uint8_t start_row = (uint8_t)y;
+	const uint8_t end_row = (uint8_t)(y + height - 1U);
+
+	if (!ssd1363_basic_area_is_valid(x, y, width, height)) {
+		return ESP_ERR_INVALID_ARG;
+	}
+
+	return ssd1363_api_set_window(start_column, end_column, start_row, end_row);
+}
+
 /*
  * Initialize the selected bus, run the panel init sequence, and select the
  * full-screen drawing window.
@@ -213,6 +227,12 @@ esp_err_t ssd1363_basic_set_display_enhancement(uint8_t value0, uint8_t value1)
 	return ssd1363_api_set_display_enhancement(value0, value1);
 }
 
+/* Set the active drawing window using pixel coordinates. */
+esp_err_t ssd1363_basic_set_window_pixels(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
+{
+	return ssd1363_basic_set_window_pixels_internal(x, y, width, height);
+}
+
 /* Write a full logical framebuffer to the panel. */
 esp_err_t ssd1363_basic_write_buffer(const uint8_t *buffer, size_t len)
 {
@@ -247,17 +267,13 @@ esp_err_t ssd1363_basic_write_area(uint16_t x, uint16_t y, uint16_t width, uint1
 {
 	const size_t expected_len = ((size_t)width * (size_t)height) / 2U;
 	const size_t row_len = width / 2U;
-	const uint8_t start_column = (uint8_t)(x / SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS);
-	const uint8_t end_column = (uint8_t)(((x + width) / SSD1363_PANEL_COLUMN_ADDR_UNIT_PIXELS) - 1U);
-	const uint8_t start_row = (uint8_t)y;
-	const uint8_t end_row = (uint8_t)(y + height - 1U);
 	uint8_t row_buffer[SSD1363_ACTIVE_WIDTH / 2U];
 
 	if (buffer == NULL || len != expected_len || !ssd1363_basic_area_is_valid(x, y, width, height)) {
 		return ESP_ERR_INVALID_ARG;
 	}
 
-	esp_err_t err = ssd1363_api_set_window(start_column, end_column, start_row, end_row);
+	esp_err_t err = ssd1363_basic_set_window_pixels_internal(x, y, width, height);
 	if (err != ESP_OK) {
 		return err;
 	}
@@ -273,4 +289,10 @@ esp_err_t ssd1363_basic_write_area(uint16_t x, uint16_t y, uint16_t width, uint1
 	}
 
 	return ESP_OK;
+}
+
+/* Write a pixel-addressed packed 4bpp rectangle to the panel. */
+esp_err_t ssd1363_basic_write_rect_pixels(uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint8_t *buffer, size_t len)
+{
+	return ssd1363_basic_write_area(x, y, width, height, buffer, len);
 }

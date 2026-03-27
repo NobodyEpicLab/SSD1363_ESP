@@ -314,6 +314,32 @@ esp_err_t ssd1363_basic_set_display_enhancement(uint8_t value0, uint8_t value1);
 /* -------------------------------------------------------------------------- */
 
 /*
+ * Set the active drawing window using pixel coordinates.
+ *
+ * What it does:
+ * - Converts pixel coordinates into SSD1363 column-address units
+ * - Programs the controller window directly
+ *
+ * Arguments:
+ * - x: left pixel coordinate
+ *   - valid range: 0..SSD1363_ACTIVE_WIDTH-1
+ *   - alignment: must be a multiple of 4
+ * - y: top pixel coordinate
+ *   - valid range: 0..SSD1363_ACTIVE_HEIGHT-1
+ * - width: window width in pixels
+ *   - valid range: 4..SSD1363_ACTIVE_WIDTH
+ *   - alignment: must be a multiple of 4
+ * - height: window height in pixels
+ *   - valid range: 1..SSD1363_ACTIVE_HEIGHT
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - ESP_ERR_INVALID_ARG for invalid coordinates or alignment
+ * - an ESP-IDF error code if the command fails
+ */
+esp_err_t ssd1363_basic_set_window_pixels(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
+
+/*
  * Write a full packed 4bpp framebuffer to the display.
  *
  * What it does:
@@ -362,6 +388,36 @@ esp_err_t ssd1363_basic_write_buffer(const uint8_t *buffer, size_t len);
  * - an ESP-IDF error code if the write fails
  */
 esp_err_t ssd1363_basic_write_area(uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint8_t *buffer, size_t len);
+
+/*
+ * Write a rectangular packed 4bpp area to the display using pixel coordinates.
+ *
+ * What it does:
+ * - Uses the same packed buffer format as the framebuffer module
+ * - Converts pixel coordinates into controller column units internally
+ *
+ * Arguments:
+ * - x: left pixel coordinate
+ *   - valid range: 0..SSD1363_ACTIVE_WIDTH-1
+ *   - alignment: must be a multiple of 4
+ * - y: top pixel coordinate
+ *   - valid range: 0..SSD1363_ACTIVE_HEIGHT-1
+ * - width: area width in pixels
+ *   - valid range: 4..SSD1363_ACTIVE_WIDTH
+ *   - alignment: must be a multiple of 4
+ * - height: area height in pixels
+ *   - valid range: 1..SSD1363_ACTIVE_HEIGHT
+ * - buffer: pointer to packed 4bpp area data
+ *   - must not be NULL
+ * - len: size of buffer in bytes
+ *   - required value: (width * height) / 2
+ *
+ * Returns:
+ * - ESP_OK on success
+ * - ESP_ERR_INVALID_ARG for invalid coordinates, alignment, buffer, or length
+ * - an ESP-IDF error code if the write fails
+ */
+esp_err_t ssd1363_basic_write_rect_pixels(uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint8_t *buffer, size_t len);
 
 #ifdef __cplusplus
 }

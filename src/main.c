@@ -6,5 +6,5 @@
 void app_main(void)
 {
 	printf("SSD1363 application start\n");
-	ssd1363_font_presentation_run_i2c();
+	ssd1363_demo_run_i2c_smoke_test();
 }

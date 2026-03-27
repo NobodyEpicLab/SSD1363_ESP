@@ -29,8 +29,65 @@ typedef struct {
 	double updates_per_second;
 } ssd1363_demo_benchmark_result_t;
 
+static esp_err_t ssd1363_demo_show_line_example(void);
 static esp_err_t ssd1363_demo_prepare_benchmark_scene(const char *mode_label, const ssd1363_font_t *counter_font, uint16_t *number_width, uint16_t *number_height);
 static esp_err_t ssd1363_demo_run_counter_benchmark(const char *mode_label, bool use_partial_flush, ssd1363_demo_benchmark_result_t *result);
+
+static esp_err_t ssd1363_demo_show_line_example(void)
+{
+	esp_err_t err;
+
+	ssd1363_framebuffer_fill(&g_gfx_framebuffer, 0x00U);
+
+	err = ssd1363_text_write_string_full(
+		&g_gfx_framebuffer,
+		8U,
+		12U,
+		"UI DIVIDER EXAMPLE",
+		&ssd1363_font_builtin_10x14,
+		0x0FU,
+		0x00U,
+		SSD1363_FRAMEBUFFER_BITMAP_OPAQUE
+	);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_text_write_string_full(
+		&g_gfx_framebuffer,
+		8U,
+		98U,
+		"draw_divider(&fb, 0, 64, 256, 0x0F)",
+		&ssd1363_font_builtin_5x7,
+		0x08U,
+		0x00U,
+		SSD1363_FRAMEBUFFER_BITMAP_OPAQUE
+	);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_text_write_string_full(
+		&g_gfx_framebuffer,
+		8U,
+		110U,
+		"flush_rect(&fb, 0, 64, 256, 1)",
+		&ssd1363_font_builtin_5x7,
+		0x08U,
+		0x00U,
+		SSD1363_FRAMEBUFFER_BITMAP_OPAQUE
+	);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_framebuffer_draw_divider(&g_gfx_framebuffer, 0U, 64U, 256U, 0x0FU);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	return ssd1363_framebuffer_flush(&g_gfx_framebuffer);
+}
 
 static esp_err_t ssd1363_demo_show_refresh_results(const ssd1363_demo_benchmark_result_t *rect_result, const ssd1363_demo_benchmark_result_t *full_result)
 {
@@ -369,6 +426,16 @@ static void ssd1363_demo_run_i2c_smoke_test_impl(void)
 
 	printf("SSD1363 basic layer initialized over I2C\n");
 	printf("Demo contrast set to 0x%02X\n", SSD1363_DEMO_CONTRAST);
+	printf("Displaying 1-pixel horizontal line example\n");
+
+	err = ssd1363_demo_show_line_example();
+	if (err != ESP_OK) {
+		printf("Line example failed: %s\n", esp_err_to_name(err));
+		return;
+	}
+
+	vTaskDelay(pdMS_TO_TICKS(2000));
+
 	printf("Displaying partial vs full refresh benchmark\n");
 
 	err = show_grayscale_text_scene();

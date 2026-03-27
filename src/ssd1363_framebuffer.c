@@ -36,6 +36,22 @@ static size_t ssd1363_framebuffer_pixel_index(uint16_t x, uint16_t y)
 	return ((size_t)y * SSD1363_FRAMEBUFFER_ROW_BYTES) + (x / 2U);
 }
 
+static void ssd1363_framebuffer_stamp_brush(ssd1363_framebuffer_t *framebuffer, int center_x, int center_y, uint8_t gray4, uint16_t thickness)
+{
+	const int radius_before = (int)((thickness - 1U) / 2U);
+	const int radius_after = (int)(thickness / 2U);
+
+	for (int brush_y = center_y - radius_before; brush_y <= center_y + radius_after; ++brush_y) {
+		for (int brush_x = center_x - radius_before; brush_x <= center_x + radius_after; ++brush_x) {
+			if (brush_x >= 0 && brush_y >= 0 &&
+				brush_x < (int)SSD1363_FRAMEBUFFER_WIDTH &&
+				brush_y < (int)SSD1363_FRAMEBUFFER_HEIGHT) {
+				ssd1363_framebuffer_set_pixel(framebuffer, (uint16_t)brush_x, (uint16_t)brush_y, gray4);
+			}
+		}
+	}
+}
+
 void ssd1363_framebuffer_init(ssd1363_framebuffer_t *framebuffer)
 {
 	if (framebuffer == NULL) {
@@ -158,6 +174,11 @@ esp_err_t ssd1363_framebuffer_fill_rect(ssd1363_framebuffer_t *framebuffer, uint
 	return ESP_OK;
 }
 
+esp_err_t ssd1363_framebuffer_draw_divider(ssd1363_framebuffer_t *framebuffer, uint16_t x, uint16_t y, uint16_t width, uint8_t gray4)
+{
+	return ssd1363_framebuffer_draw_hline(framebuffer, x, y, width, gray4);
+}
+
 esp_err_t ssd1363_framebuffer_draw_hline(ssd1363_framebuffer_t *framebuffer, uint16_t x, uint16_t y, uint16_t width, uint8_t gray4)
 {
 	return ssd1363_framebuffer_fill_rect(framebuffer, x, y, width, 1U, gray4);
@@ -212,6 +233,54 @@ esp_err_t ssd1363_framebuffer_draw_line(ssd1363_framebuffer_t *framebuffer, uint
 	return ESP_OK;
 }
 
+esp_err_t ssd1363_framebuffer_draw_line_thick(ssd1363_framebuffer_t *framebuffer, uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint8_t gray4, uint16_t thickness)
+{
+	int x = (int)x0;
+	int y = (int)y0;
+	const int target_x = (int)x1;
+	const int target_y = (int)y1;
+	const int delta_x = abs(target_x - x);
+	const int step_x = (x < target_x) ? 1 : -1;
+	const int delta_y = -abs(target_y - y);
+	const int step_y = (y < target_y) ? 1 : -1;
+	int error;
+
+	if (framebuffer == NULL || gray4 > 0x0FU || thickness == 0U) {
+		return ESP_ERR_INVALID_ARG;
+	}
+
+	if (!ssd1363_framebuffer_pixel_in_bounds(x0, y0) || !ssd1363_framebuffer_pixel_in_bounds(x1, y1)) {
+		return ESP_ERR_INVALID_ARG;
+	}
+
+	if (thickness == 1U) {
+		return ssd1363_framebuffer_draw_line(framebuffer, x0, y0, x1, y1, gray4);
+	}
+
+	error = delta_x + delta_y;
+
+	while (true) {
+		ssd1363_framebuffer_stamp_brush(framebuffer, x, y, gray4, thickness);
+
+		if (x == target_x && y == target_y) {
+			break;
+		}
+
+		const int doubled_error = error * 2;
+		if (doubled_error >= delta_y) {
+			error += delta_y;
+			x += step_x;
+		}
+
+		if (doubled_error <= delta_x) {
+			error += delta_x;
+			y += step_y;
+		}
+	}
+
+	return ESP_OK;
+}
+
 esp_err_t ssd1363_framebuffer_draw_rect(ssd1363_framebuffer_t *framebuffer, uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t gray4)
 {
 	esp_err_t err;
@@ -244,6 +313,51 @@ esp_err_t ssd1363_framebuffer_draw_rect(ssd1363_framebuffer_t *framebuffer, uint
 	}
 
 	return ESP_OK;
+}
+
+esp_err_t ssd1363_framebuffer_draw_rect_thick(ssd1363_framebuffer_t *framebuffer, uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t gray4, uint16_t thickness)
+{
+	esp_err_t err;
+
+	if (framebuffer == NULL || width == 0U || height == 0U || gray4 > 0x0FU || thickness == 0U) {
+		return ESP_ERR_INVALID_ARG;
+	}
+
+	if (!ssd1363_framebuffer_rect_in_bounds(x, y, width, height)) {
+		return ESP_ERR_INVALID_ARG;
+	}
+
+	if (thickness == 1U) {
+		return ssd1363_framebuffer_draw_rect(framebuffer, x, y, width, height, gray4);
+	}
+
+	if ((thickness * 2U) >= width || (thickness * 2U) >= height) {
+		return ssd1363_framebuffer_fill_rect(framebuffer, x, y, width, height, gray4);
+	}
+
+	err = ssd1363_framebuffer_fill_rect(framebuffer, x, y, width, thickness, gray4);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_framebuffer_fill_rect(framebuffer, x, (uint16_t)(y + height - thickness), width, thickness, gray4);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	err = ssd1363_framebuffer_fill_rect(framebuffer, x, (uint16_t)(y + thickness), thickness, (uint16_t)(height - (2U * thickness)), gray4);
+	if (err != ESP_OK) {
+		return err;
+	}
+
+	return ssd1363_framebuffer_fill_rect(
+		framebuffer,
+		(uint16_t)(x + width - thickness),
+		(uint16_t)(y + thickness),
+		thickness,
+		(uint16_t)(height - (2U * thickness)),
+		gray4
+	);
 }
 
 esp_err_t ssd1363_framebuffer_draw_bitmap_1bpp(ssd1363_framebuffer_t *framebuffer, uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint8_t *bitmap, uint8_t foreground_gray4, uint8_t background_gray4, ssd1363_framebuffer_bitmap_mode_t mode)

@@ -1,102 +1,40 @@
 # SSD1363 OLED Library for ESP-IDF / PlatformIO
 
-SSD1363 OLED library project for ESP32, focused on real SSD1363 controller support with **4-bit grayscale** support.
+SSD1363 grayscale OLED driver and graphics library for ESP32, built around real hardware bring-up instead of datasheet-only assumptions.
 
-This project was created because usable SSD1363 libraries are limited, and because grayscale support is important for these displays.
+The main reason this project exists is simple: usable SSD1363 libraries are very hard to find, especially ones that actually handle grayscale and work in a modern PlatformIO + ESP-IDF setup.
 
-THIS PROJECT IS STILL VERY MUCH IN PROGRESS, but some of the function works already, gray scale and text for example. I could not find any librarys that would support gray for this display scale so decided to write it myself with strong GPT support :)
+## What This Library Provides
 
-## What This Is
+- Real SSD1363 initialization and display output on tested hardware
+- `4bpp` grayscale framebuffer for `256x128`
+- Pixel, line, rectangle, divider, and bitmap drawing
+- Text rendering with built-in and imported GFXfont-based fonts
+- Layered architecture for transport, controller commands, practical helpers, framebuffer, and text
+- PlatformIO project structure ready for ESP-IDF development
 
-This repository is an in-progress SSD1363 driver and graphics library for:
+## Current State
 
-- ESP32
-- ESP-IDF
-- PlatformIO
-- 256x128 SSD1363 OLED displays
+This library is already usable.
 
-Current development has been done primarily against an I2C-connected SSD1363 module.
+Confirmed working:
 
-## Important Features
+- SSD1363 panel bring-up on real hardware
+- Full-screen drawing
+- Partial updates
+- `16` grayscale levels
+- Clean text rendering after matching the panel's real GDDRAM packing format
+- PlatformIO build and upload flow
 
-- **Works with SSD1363**
-- **Supports grayscale**
-- 4bpp framebuffer for `256x128`
-- Pixel, line, rectangle, and bitmap drawing
-- Text rendering layer
-- PlatformIO + ESP-IDF project structure
-- I2C transport working on real hardware
-- SPI path scaffolded for future validation
+Not finalized yet:
 
-## Current Status
+- SPI is scaffolded but not hardware-validated
+- Some SSD1363 features still only exist at the raw command level
+- Public API naming is stable enough to use, but may still evolve slowly over time
 
-This project is working, but it is still under active development.
+## Tested Hardware
 
-What is currently confirmed:
-
-- SSD1363 panel bring-up works on real hardware
-- Full-screen output works
-- Grayscale output works
-- Text rendering works cleanly after matching the panel's real GDDRAM packing format
-- The project builds with PlatformIO using ESP-IDF
-
-What is not final yet:
-
-- The public API still needs cleanup
-- SPI support is scaffolded, but not yet hardware-validated
-- More SSD1363 commands still need dedicated wrappers
-- Documentation still needs to be expanded
-
-## Minimum Usable API
-
-If you want to use the library without touching low-level controller commands, start with the `ssd1363_basic`, `ssd1363_framebuffer`, and `ssd1363_text` layers.
-
-Recommended starting point:
-
-- `ssd1363_basic_init(bus)`
-	- initialize transport and panel
-- `ssd1363_basic_display_on()` / `ssd1363_basic_display_off()`
-	- panel output control
-- `ssd1363_basic_set_contrast(value)`
-	- quick visible brightness/current tuning
-- `ssd1363_basic_set_master_contrast(value)`
-	- coarse global contrast control
-- `ssd1363_framebuffer_init(&fb)`
-	- initialize framebuffer state
-- `ssd1363_framebuffer_fill(&fb, gray)`
-	- clear or fill the whole framebuffer
-- `ssd1363_framebuffer_set_pixel(...)`
-- `ssd1363_framebuffer_draw_line(...)`
-- `ssd1363_framebuffer_draw_rect(...)`
-- `ssd1363_framebuffer_fill_rect(...)`
-	- basic drawing primitives
-- `ssd1363_text_draw_string(...)`
-	- draw text into the framebuffer
-- `ssd1363_framebuffer_flush(&fb)`
-	- write the full framebuffer to the display
-- `ssd1363_framebuffer_flush_rect(&fb, x, y, w, h)`
-	- update only part of the display for smaller changes
-
-If you need more tuning but still want to stay above the raw command layer, the `basic` layer now also exposes helpers for:
-
-- start line
-- display offset
-- remap
-- default gray table
-- display clock
-- multiplex ratio
-- phase length
-- precharge voltage
-- second precharge
-- VCOMH
-- segment low voltage
-- display enhancement
-
-The lower `ssd1363_api` layer is still available when you want direct SSD1363 register-level control.
-
-## Tested Setup
-
-Current known working setup during development:
+Validated development setup:
 
 - Board: `az-delivery-devkit-v4`
 - Framework: `ESP-IDF`
@@ -108,94 +46,115 @@ Current known working setup during development:
 - SCL: `22`
 - Reset pin: not connected in the tested setup
 
+## Why This Matters
+
+This is not just a monochrome OLED library with SSD1363 naming.
+
+The library is built around real SSD1363 grayscale behavior:
+
+- packed `4bpp` framebuffer storage
+- SSD1363-specific windowing and writes
+- panel-specific GDDRAM packing behavior
+- support for grayscale-oriented UI work
+
+That makes it useful for dashboards, ECU-style displays, test equipment screens, and similar applications where grayscale and larger fonts matter.
+
 ## Project Layout
 
-The project intentionally uses a flat structure:
+The project intentionally keeps a flat layout:
 
-- Public headers in `include/`
-- Source files in `src/`
+- public headers in `include/`
+- source files in `src/`
 
-Main modules currently include:
+Main modules:
 
-- `ssd1363_interface` - transport layer for I2C/SPI
-- `ssd1363_api` - low-level SSD1363 command layer
-- `ssd1363_basic` - simpler high-level display write layer
-- `ssd1363_framebuffer` - 4bpp framebuffer and drawing primitives
-- `ssd1363_text` / `ssd1363_fonts` - text rendering and bundled font support
+- `ssd1363_interface`: low-level transport layer for I2C and future SPI
+- `ssd1363_api`: raw SSD1363 command layer
+- `ssd1363_basic`: practical high-level controller helpers
+- `ssd1363_framebuffer`: local `4bpp` framebuffer and drawing primitives
+- `ssd1363_text`: text measurement and rendering
+- `ssd1363_fonts`: public font registry
+- `ssd1363_demo`: smoke test and refresh benchmark
+- `ssd1363_font_presentation`: separate font preview application
 
-## Why Grayscale Matters
+## Recommended Starting Point
 
-This library is specifically intended for **SSD1363 grayscale OLED displays**.
+If you want to use the display without thinking about raw controller commands, work with these layers:
 
-That means this is not just a monochrome text library with SSD1363 naming. The project is built around:
+- `ssd1363_basic`
+- `ssd1363_framebuffer`
+- `ssd1363_text`
 
-- `16` grayscale levels
-- packed `4bpp` framebuffer storage
-- SSD1363 GDDRAM-oriented writes
-- future grayscale-focused controller features
+Typical workflow:
 
-## Credits and Upstream References
+1. Initialize the display with `ssd1363_basic_init(...)`
+2. Create or clear a framebuffer with `ssd1363_framebuffer_init(...)` or `ssd1363_framebuffer_fill(...)`
+3. Draw graphics with framebuffer helpers
+4. Draw text with `ssd1363_text_draw_string(...)`
+5. Push the result to the display with `ssd1363_framebuffer_flush(...)` or `ssd1363_framebuffer_flush_rect(...)`
 
-This project is not created in isolation. Important ideas, structure, and reference material came from earlier work by other authors.
+Useful high-level functions include:
 
-### SSD1322 OLED Library
+- `ssd1363_basic_init(...)`
+- `ssd1363_basic_display_on()` / `ssd1363_basic_display_off()`
+- `ssd1363_basic_set_contrast(...)`
+- `ssd1363_basic_set_master_contrast(...)`
+- `ssd1363_framebuffer_set_pixel(...)`
+- `ssd1363_framebuffer_draw_line(...)`
+- `ssd1363_framebuffer_draw_rect(...)`
+- `ssd1363_framebuffer_fill_rect(...)`
+- `ssd1363_framebuffer_draw_divider(...)`
+- `ssd1363_text_draw_string(...)`
+- `ssd1363_framebuffer_flush(...)`
+- `ssd1363_framebuffer_flush_rect(...)`
 
-A major structural reference for this project was:
+If you want direct datasheet-level control, drop down into `ssd1363_api`.
+
+## Font Naming
+
+Preferred public font names use pixel height in the symbol name, for example:
+
+- `ssd1363_font_freemono_24px`
+- `ssd1363_font_cascadiacode_29px`
+- `ssd1363_font_ibmplexmonolight_32px`
+
+Older `12pt`, `x2`, and `x3` names are still exported as compatibility aliases so existing code does not break.
+
+## Why Another SSD1363 Library
+
+Because there are very few SSD1363 libraries that:
+
+- clearly target this controller
+- support grayscale properly
+- are structured for ESP-IDF / PlatformIO
+- are known to run on real hardware
+
+This repository is intended to be a practical starting point, not just a partial port or an unverified command list.
+
+## Credits and References
+
+This project was informed by earlier public work and should keep that credit visible.
+
+Structural and architectural inspiration:
 
 - [wjklimek1/SSD1322_OLED_library](https://github.com/wjklimek1/SSD1322_OLED_library/tree/master)
 
-Credit goes to:
+Font backend format:
 
-- `wjklimek1`
-- all contributors to `SSD1322_OLED_library`
+- Adafruit GFX `GFXglyph` / `GFXfont`
 
-This project especially benefited from that library's organization and general driver / graphics layering approach.
-
-### Adafruit GFX Font Format
-
-The current readable font backend uses the `GFXglyph` / `GFXfont` style that is widely known from Adafruit GFX font assets.
-
-Credit goes to:
-
-- Adafruit Industries
-- contributors to the Adafruit GFX ecosystem
-
-The bundled `FreeMono12pt7b` font asset included in this repository carries its own BSD license text in the font header.
-
-### U8g2 Reference Work
-
-During SSD1363 bring-up and mapping validation, SSD1363-related behavior was also compared against known public SSD1363 work from:
+Bring-up comparison and SSD1363 behavior cross-checking:
 
 - [olikraus/u8g2](https://github.com/olikraus/u8g2)
 
-Credit goes to:
-
-- `olikraus`
-- all contributors to `u8g2`
-
-## Goal of This Repository
-
-The goal is to grow this into a clean, reusable public SSD1363 library that:
-
-- actually works on real hardware
-- supports grayscale properly
-- is understandable to maintain
-- is useful for other people working with SSD1363 displays
-
-## License Notes
-
-Please review the licenses of this repository and bundled assets before reuse.
-
-In particular:
-
-- this project should keep upstream credit visible
-- bundled font assets may have their own license text
-- upstream reference projects remain the work of their original authors and contributors
+The bundled `FreeMono12pt7b` asset includes its own BSD license text in the font header.
 
 ## Development Notes
 
-The project tracker is here:
+Project progress and working assumptions are tracked in:
 
 - `SSD1363_PORTING_TRACKER.md`
 
-That file contains implementation progress, current assumptions, and planned next steps.
+## License Notes
+
+Please review licenses before reuse, especially for bundled font assets and upstream reference material.

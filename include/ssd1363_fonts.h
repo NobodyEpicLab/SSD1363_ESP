@@ -7,9 +7,12 @@
 extern "C" {
 #endif
 
+/* Built-in bitmap fonts. */
 extern const ssd1363_font_t ssd1363_font_builtin_5x7;
 extern const ssd1363_font_t ssd1363_font_builtin_10x14;
 extern const ssd1363_font_t ssd1363_font_builtin_15x21;
+
+/* Preferred public font names. Height is included directly in the symbol. */
 extern const ssd1363_font_t ssd1363_font_freemono_24px;
 extern const ssd1363_font_t ssd1363_font_freemono_48px;
 extern const ssd1363_font_t ssd1363_font_freemono_72px;
@@ -31,6 +34,8 @@ extern const ssd1363_font_t ssd1363_font_orbitron_46px;
 extern const ssd1363_font_t ssd1363_font_sharetechmono_14px;
 extern const ssd1363_font_t ssd1363_font_sharetechmono_28px;
 extern const ssd1363_font_t ssd1363_font_sharetechmono_41px;
+
+/* Legacy compatibility aliases kept so older code still builds. */
 extern const ssd1363_font_t ssd1363_font_cascadiacode12pt;
 extern const ssd1363_font_t ssd1363_font_cascadiacode12pt_x2;
 extern const ssd1363_font_t ssd1363_font_cascadiacode12pt_x3;

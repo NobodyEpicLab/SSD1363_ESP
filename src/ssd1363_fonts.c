@@ -168,10 +168,12 @@ SSD1363_DEFINE_GFX_FONT(ssd1363_font_freemono_24px, FreeMono12pt7b, 15U, 24U, 1U
 SSD1363_DEFINE_GFX_FONT(ssd1363_font_freemono_48px, FreeMono12pt7b, 15U, 24U, 2U, 2U, 2U)
 SSD1363_DEFINE_GFX_FONT(ssd1363_font_freemono_72px, FreeMono12pt7b, 15U, 24U, 3U, 3U, 4U)
 
+/* Legacy FreeMono aliases preserved for compatibility. */
 SSD1363_DEFINE_GFX_FONT(ssd1363_font_freemono12pt7b, FreeMono12pt7b, 15U, 24U, 1U, 1U, 0U)
 SSD1363_DEFINE_GFX_FONT(ssd1363_font_freemono12pt7b_x2, FreeMono12pt7b, 15U, 24U, 2U, 2U, 2U)
 SSD1363_DEFINE_GFX_FONT(ssd1363_font_freemono12pt7b_x3, FreeMono12pt7b, 15U, 24U, 3U, 3U, 4U)
 
+/* Preferred pixel-height font exports. */
 SSD1363_DEFINE_GFX_FONT(ssd1363_font_cascadiacode_15px, CascadiaCode15px, CascadiaCode15px_ASCENT, CascadiaCode15px_Y_ADVANCE, 1U, 1U, 0U)
 SSD1363_DEFINE_GFX_FONT(ssd1363_font_cascadiacode_29px, CascadiaCode29px, CascadiaCode29px_ASCENT, CascadiaCode29px_Y_ADVANCE, 1U, 1U, 0U)
 SSD1363_DEFINE_GFX_FONT(ssd1363_font_cascadiacode_43px, CascadiaCode43px, CascadiaCode43px_ASCENT, CascadiaCode43px_Y_ADVANCE, 1U, 1U, 0U)
@@ -196,6 +198,7 @@ SSD1363_DEFINE_GFX_FONT(ssd1363_font_sharetechmono_14px, ShareTechMono14px, Shar
 SSD1363_DEFINE_GFX_FONT(ssd1363_font_sharetechmono_28px, ShareTechMono28px, ShareTechMono28px_ASCENT, ShareTechMono28px_Y_ADVANCE, 1U, 1U, 0U)
 SSD1363_DEFINE_GFX_FONT(ssd1363_font_sharetechmono_41px, ShareTechMono41px, ShareTechMono41px_ASCENT, ShareTechMono41px_Y_ADVANCE, 1U, 1U, 0U)
 
+/* Legacy 12pt/x2/x3 aliases preserved for compatibility with older examples. */
 SSD1363_DEFINE_GFX_FONT(ssd1363_font_cascadiacode12pt, CascadiaCode15px, CascadiaCode15px_ASCENT, CascadiaCode15px_Y_ADVANCE, 1U, 1U, 0U)
 SSD1363_DEFINE_GFX_FONT(ssd1363_font_cascadiacode12pt_x2, CascadiaCode29px, CascadiaCode29px_ASCENT, CascadiaCode29px_Y_ADVANCE, 1U, 1U, 0U)
 SSD1363_DEFINE_GFX_FONT(ssd1363_font_cascadiacode12pt_x3, CascadiaCode43px, CascadiaCode43px_ASCENT, CascadiaCode43px_Y_ADVANCE, 1U, 1U, 0U)
